@@ -53,3 +53,34 @@ Stage Summary:
 - Postgres migration is idempotent, includes indexes + triggers, works with psql or drizzle-kit
 - Health endpoint live at /api/health/db — ready for uptime monitoring
 - Seed expanded: 21 offers (was 15), 22 applications (was 15), 10 messages (was 4), 19 notifications (was 13)
+
+---
+Task ID: 3
+Agent: Super Z (main)
+Task: Provision and activate Neon Postgres database with user-provided connection string
+
+Work Log:
+- Received Neon connection string from user (postgresql://neondb_owner:...@ep-sparkling-term-axu27glm-pooler.c-4.us-east-2.aws.neon.tech/neondb)
+- Backed up SQLite DB (db/custom.db.sqlite-backup) and .env (.env.sqlite-backup)
+- Updated .env with Neon DATABASE_URL (removed channel_binding param for broader client compat)
+- Switched prisma/schema.prisma datasource provider from "sqlite" to "postgresql"
+- Ran `bun run db:generate` — regenerated Prisma Client for Postgres
+- Ran `bun run db:push` against Neon — created all 9 tables (Hospital, User, Offer, Application, Credential, Message, Notification, SavedOffer, AuditEvent) with FK constraints, unique indexes, and enum types. Completed in 13.95s.
+- Discovered sandbox manager exports DATABASE_URL=file:... (SQLite default) into every shell, which Next.js's built-in .env loader does NOT override
+- Fixed by patching src/lib/db.ts to use `dotenv.config({ path: '.env', override: true })` — forces Prisma to read the Neon URL from .env, overriding the inherited SQLite default
+- Installed `dotenv` package
+- Ran seed script against Neon (passed DATABASE_URL inline) — populated 3 hospitals, 14 users, 21 offers, 22 applications, 12 credentials, 10 messages, 19 notifications, 4 saved offers, 41 audit events (146 total rows)
+- Fixed /api/health/db endpoint — replaced raw SQL (which used lowercase table names that don't exist in Postgres with Prisma's mixed-case naming) with Prisma model API (db.hospital.count() etc.) — now works on both SQLite and Postgres
+- Restarted dev server with Neon connection — verified via /api/health/db: status=ok, engine=postgresql (neon), latencyMs=862-1164ms (cold start), all 9 tables with correct row counts
+- Browser-tested end-to-end: admin login (sarah.chen@stmarys.test) → dashboard shows 5 open offers, 8 applicants, 2 upcoming shifts, 0 filled — all reading from Neon; staff login (james.morrison@staff.test) → "Welcome back, James" — confirmed working
+- Direct Neon query verification confirmed 3 hospitals with offer counts (St. Mary's: 6, Lakeside: 8, Northgate: 7), 21 offers, 14 users, 22 applications
+
+Stage Summary:
+- Neon Postgres is now the active database for ShiftGrid
+- Connection: postgresql://neondb_owner:***@ep-sparkling-term-axu27glm-pooler.c-4.us-east-2.aws.neon.tech/neondb (us-east-2, pooled)
+- Schema: 9 tables, 5 enum types, unique indexes, FK constraints — all on Neon
+- Data: 146 rows across all tables (3 hospitals, 14 users, 21 offers, 22 applications, 12 credentials, 10 messages, 19 notifications, 4 saved offers, 41 audit events)
+- Latency: ~860-1160ms on cold queries (Neon scale-from-zero), expected to drop to ~50-100ms once warm
+- Health endpoint: /api/health/db returns live Neon status with table counts
+- Rollback path: .env.sqlite-backup and db/custom.db.sqlite-backup preserved if user wants to revert
+- SECURITY NOTE: User shared Neon connection string in chat — should rotate the password at console.neon.tech → Project → Connection Details → Reset password

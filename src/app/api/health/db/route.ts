@@ -7,39 +7,39 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   const start = Date.now()
   try {
-    // Run a SELECT 1 to verify the connection works
-    await db.$queryRaw`SELECT 1`
-
-    // Collect row counts from each table
-    const counts = await db.$queryRaw<{name: string; cnt: number}[]>`
-      SELECT 'hospitals' AS name, COUNT(*) AS cnt FROM Hospital
-      UNION ALL SELECT 'users', COUNT(*) FROM User
-      UNION ALL SELECT 'offers', COUNT(*) FROM Offer
-      UNION ALL SELECT 'applications', COUNT(*) FROM Application
-      UNION ALL SELECT 'credentials', COUNT(*) FROM Credential
-      UNION ALL SELECT 'messages', COUNT(*) FROM Message
-      UNION ALL SELECT 'notifications', COUNT(*) FROM Notification
-      UNION ALL SELECT 'savedOffers', COUNT(*) FROM SavedOffer
-      UNION ALL SELECT 'auditEvents', COUNT(*) FROM AuditEvent
-    `
+    // Use Prisma model API (works on both SQLite and Postgres, case-correct)
+    const [hospitals, users, offers, applications, credentials, messages, notifications, savedOffers, auditEvents] = await Promise.all([
+      db.hospital.count(),
+      db.user.count(),
+      db.offer.count(),
+      db.application.count(),
+      db.credential.count(),
+      db.message.count(),
+      db.notification.count(),
+      db.savedOffer.count(),
+      db.auditEvent.count(),
+    ])
 
     const latencyMs = Date.now() - start
-    const tableCounts: Record<string, number> = {}
-    for (const row of counts) {
-      // SQLite returns lowercase, Prisma may format differently — normalize
-      const name = String(row.name)
-      const cnt = Number(row.cnt)
-      tableCounts[name] = cnt
-    }
 
     return NextResponse.json({
       status: 'ok',
       database: 'reachable',
+      engine: 'postgresql (neon)',
       latencyMs,
       timestamp: new Date().toISOString(),
-      engine: 'sqlite (development)',
-      tables: tableCounts,
-      totalRows: Object.values(tableCounts).reduce((a, b) => a + b, 0),
+      tables: {
+        hospitals,
+        users,
+        offers,
+        applications,
+        credentials,
+        messages,
+        notifications,
+        savedOffers,
+        auditEvents,
+      },
+      totalRows: hospitals + users + offers + applications + credentials + messages + notifications + savedOffers + auditEvents,
     })
   } catch (e: any) {
     return NextResponse.json({
