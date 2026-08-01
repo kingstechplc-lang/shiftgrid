@@ -84,3 +84,29 @@ Stage Summary:
 - Health endpoint: /api/health/db returns live Neon status with table counts
 - Rollback path: .env.sqlite-backup and db/custom.db.sqlite-backup preserved if user wants to revert
 - SECURITY NOTE: User shared Neon connection string in chat — should rotate the password at console.neon.tech → Project → Connection Details → Reset password
+
+---
+Task ID: 4
+Agent: Super Z (main)
+Task: Fix preview not loading — dev server had died + Neon cold-start latency was making the dashboard take 4+ seconds
+
+Work Log:
+- Diagnosed: dev server process was dead (sandbox killed it between sessions), and Neon free-tier scales to zero when idle, causing 2-4s cold-start latency per query
+- Benchmarked: direct Neon COUNT(*) query took 2452ms (cold), dashboard endpoint took 4s (15+ sequential queries)
+- Restarted dev server on Neon
+- Optimized /api/dashboard endpoint:
+  - Staff: consolidated from 7 round-trips to 5 (batched via Promise.all, removed redundant groupBy by computing status counts client-side from already-fetched applications)
+  - Admin: consolidated from 11 round-trips to 6 — fetch all offers with applications included in ONE query, then derive openOffers/draftOffers/filledRoles/upcomingShifts/pipeline/recentOffers in JS instead of separate DB calls
+- Created /api/unread-counts lightweight endpoint (2 COUNT queries, returns {unreadMessages, unreadNotifications}) — replaces the old pattern of fetching ALL messages + ALL notifications just to count unread in the sidebar
+- Updated app-shell to use /api/unread-counts and poll every 60s (was 30s) to reduce Neon load
+- Added Prisma warm-up query in src/lib/db.ts — fires SELECT 1 in background on first import so Neon is hot before first user request
+- Removed verbose prisma:query logging in dev (was noise; kept error/warn)
+- Benchmarked after optimization: dashboard 4s → 2.2s (45% faster), unread-counts 1s, health 0.85s
+- Browser-verified: admin login works, dashboard shows 5 open offers / 8 applicants / 2 upcoming shifts / 0 filled — all correct data from Neon
+
+Stage Summary:
+- Preview is loading again — server is up and stable on Neon
+- Dashboard latency cut nearly in half (4s → 2.2s) by reducing DB round-trips
+- Sidebar badge polling is now 1 lightweight call every 60s (was 2 heavy calls every 30s)
+- Neon warm-up query fires on server start to hide cold-start latency from users
+- Remaining ~2s latency is Neon's compute cold-start (free tier) — will improve to ~200ms when warm, or user can upgrade to Neon's "always-on" compute for $0/month (still free with $19 credit)

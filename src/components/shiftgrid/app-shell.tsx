@@ -48,17 +48,16 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
     let cancelled = false
     const run = async () => {
       try {
-        const [n, m] = await Promise.all([
-          api<{ unreadCount: number }>('/api/notifications?unread=true'),
-          api<{ items: any[] }>('/api/messages'),
-        ])
+        // Single lightweight call instead of fetching full messages + notifications lists
+        const r = await api<{ unreadMessages: number; unreadNotifications: number }>('/api/unread-counts')
         if (cancelled) return
-        setUnreadNotifs(n.unreadCount || 0)
-        setUnreadMsgs(m.items.filter((x: any) => !x.mine).length)
+        setUnreadNotifs(r.unreadNotifications || 0)
+        setUnreadMsgs(r.unreadMessages || 0)
       } catch {}
     }
     run()
-    const i = setInterval(run, 30000)
+    // Poll every 60s (was 30s) — Neon cold starts make frequent polling expensive
+    const i = setInterval(run, 60000)
     return () => { cancelled = true; clearInterval(i) }
   }, [user.id])
 
