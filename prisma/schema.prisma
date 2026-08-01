@@ -1,0 +1,195 @@
+// ShiftGrid — Healthcare staffing marketplace schema
+// Adapted to Prisma + SQLite per project conventions
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Hospital {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  logoUrl     String?
+  address     String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members  User[]
+  offers   Offer[]
+}
+
+enum Role {
+  super_admin
+  hospital_admin
+  staff
+}
+
+enum OfferType {
+  locum
+  permanent
+}
+
+enum OfferStatus {
+  draft
+  published
+  closed
+  filled
+}
+
+enum Visibility {
+  public
+  internal
+}
+
+enum ApplicationStatus {
+  applied
+  under_review
+  shortlisted
+  offered
+  accepted
+  declined
+  withdrawn
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String
+  name            String
+  role            Role     @default(staff)
+  hospitalId      String?
+  hospital        Hospital? @relation(fields: [hospitalId], references: [id])
+  specialty       String?
+  experienceYears Int?
+  resumeUrl       String?
+  availability    String?
+  bio             String?
+  location        String?
+  preferredTypes  String?  // comma-separated "locum,permanent"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  applications  Application[]
+  credentials   Credential[]
+  sentMessages  Message[]     @relation("MessageSender")
+  receivedMessages Message[]  @relation("MessageRecipient")
+  notifications Notification[]
+  savedOffers   SavedOffer[]
+  offersCreated Offer[]
+}
+
+model Offer {
+  id             String       @id @default(cuid())
+  hospitalId     String
+  hospital       Hospital     @relation(fields: [hospitalId], references: [id])
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  type           OfferType
+  title          String
+  specialty      String?
+  description    String?
+  requirements   String?      // JSON string array
+  location       String?
+  status         OfferStatus  @default(draft)
+  visibility     Visibility   @default(public)
+  deadline       DateTime?
+
+  // locum-only
+  shiftStart     DateTime?
+  shiftEnd       DateTime?
+  rate           Float?
+  rateUnit       String?
+  urgent         Boolean      @default(false)
+
+  // permanent-only
+  employmentType String?
+  salaryMin      Int?
+  salaryMax      Int?
+  benefits       String?
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  applications Application[]
+  savedBy      SavedOffer[]
+  messages     Message[]
+  auditEvents  AuditEvent[]
+}
+
+model Application {
+  id        String            @id @default(cuid())
+  offerId   String
+  offer     Offer             @relation(fields: [offerId], references: [id])
+  userId    String
+  user      User              @relation(fields: [userId], references: [id])
+  status    ApplicationStatus @default(applied)
+  coverNote String?
+  appliedAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([offerId, userId])
+}
+
+model Credential {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  type       String    // license | certification | resume | id
+  name       String
+  fileUrl    String
+  issueDate  DateTime?
+  expiryDate DateTime?
+  verified   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  offerId     String?
+  offer       Offer?   @relation(fields: [offerId], references: [id])
+  senderId    String
+  sender      User     @relation("MessageSender", fields: [senderId], references: [id])
+  recipientId String
+  recipient   User     @relation("MessageRecipient", fields: [recipientId], references: [id])
+  body        String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  body      String?
+  payload   String?  // JSON
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model SavedOffer {
+  userId    String
+  offerId   String
+  createdAt DateTime @default(now())
+  user      User    @relation(fields: [userId], references: [id])
+  offer     Offer   @relation(fields: [offerId], references: [id])
+
+  @@id([userId, offerId])
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  offerId   String
+  offer     Offer    @relation(fields: [offerId], references: [id])
+  actorId   String?
+  action    String
+  detail    String?
+  createdAt DateTime @default(now())
+}

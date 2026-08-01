@@ -1,0 +1,167 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { api } from '@/lib/api-client'
+import { useApp } from '@/lib/store'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+import {
+  HeartPulse, LayoutDashboard, Briefcase, Inbox, Bookmark,
+  User, MessageSquare, Bell, Building2, Users,
+  LogOut, Menu, FileText, Search,
+} from 'lucide-react'
+import type { View } from '@/lib/store'
+import type { SafeUser } from '@/lib/types'
+
+type NavItem = { view: View; label: string; icon: React.ReactNode }
+
+const STAFF_NAV: NavItem[] = [
+  { view: 'home', label: 'Home', icon: <LayoutDashboard className="size-4" /> },
+  { view: 'browse', label: 'Browse offers', icon: <Search className="size-4" /> },
+  { view: 'applications', label: 'My applications', icon: <Inbox className="size-4" /> },
+  { view: 'saved', label: 'Saved offers', icon: <Bookmark className="size-4" /> },
+  { view: 'messages', label: 'Messages', icon: <MessageSquare className="size-4" /> },
+  { view: 'profile', label: 'Profile', icon: <User className="size-4" /> },
+  { view: 'credentials', label: 'Credentials', icon: <FileText className="size-4" /> },
+  { view: 'notifications', label: 'Notifications', icon: <Bell className="size-4" /> },
+]
+
+const ADMIN_NAV: NavItem[] = [
+  { view: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="size-4" /> },
+  { view: 'offers', label: 'Offers', icon: <Briefcase className="size-4" /> },
+  { view: 'messages', label: 'Messages', icon: <MessageSquare className="size-4" /> },
+  { view: 'hospital', label: 'Hospital settings', icon: <Building2 className="size-4" /> },
+  { view: 'team', label: 'Team', icon: <Users className="size-4" /> },
+  { view: 'notifications', label: 'Notifications', icon: <Bell className="size-4" /> },
+]
+
+export function AppShell({ user, children }: { user: SafeUser; children: React.ReactNode }) {
+  const { view, setView } = useApp()
+  const [unreadNotifs, setUnreadNotifs] = useState(0)
+  const [unreadMsgs, setUnreadMsgs] = useState(0)
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  const nav = user.role === 'staff' ? STAFF_NAV : ADMIN_NAV
+
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      try {
+        const [n, m] = await Promise.all([
+          api<{ unreadCount: number }>('/api/notifications?unread=true'),
+          api<{ items: any[] }>('/api/messages'),
+        ])
+        if (cancelled) return
+        setUnreadNotifs(n.unreadCount || 0)
+        setUnreadMsgs(m.items.filter((x: any) => !x.mine).length)
+      } catch {}
+    }
+    run()
+    const i = setInterval(run, 30000)
+    return () => { cancelled = true; clearInterval(i) }
+  }, [user.id])
+
+  async function handleLogout() {
+    await api('/api/auth/logout', { method: 'POST' })
+    window.location.reload()
+  }
+
+  function initials(name: string) {
+    return name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()
+  }
+
+  const SidebarContent = (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 px-5 py-5 border-b">
+        <div className="size-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
+          <HeartPulse className="size-5" />
+        </div>
+        <div>
+          <div className="font-semibold leading-none">ShiftGrid</div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            {user.role === 'staff' ? 'Healthcare professional' : 'Hospital admin'}
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {nav.map((item) => {
+          const active = view === item.view || (view === 'offer' && item.view === 'browse') || (view === 'offer-detail' && item.view === 'offers') || (view === 'offer-edit' && item.view === 'offers') || (view === 'candidate' && item.view === 'offers')
+          const badge = item.view === 'notifications' ? unreadNotifs : item.view === 'messages' ? unreadMsgs : 0
+          return (
+            <button
+              key={item.view}
+              onClick={() => { setView(item.view); setMobileOpen(false) }}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                active ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              {item.icon}
+              <span className="flex-1 text-left">{item.label}</span>
+              {badge > 0 && (
+                <span className="bg-rose-500 text-white text-xs rounded-full size-5 flex items-center justify-center font-semibold">
+                  {badge > 9 ? '9+' : badge}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </nav>
+
+      <div className="p-3 border-t">
+        <div className="flex items-center gap-3 px-2 py-2">
+          <Avatar className="size-9">
+            <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-semibold">
+              {initials(user.name)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium truncate">{user.name}</div>
+            <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" className="w-full justify-start mt-1 text-muted-foreground" onClick={handleLogout}>
+          <LogOut className="size-4 mr-2" /> Sign out
+        </Button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen flex bg-muted/30">
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex w-64 flex-col bg-background border-r sticky top-0 h-screen">
+        {SidebarContent}
+      </aside>
+
+      {/* Mobile sidebar */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-72 p-0">
+          {SidebarContent}
+        </SheetContent>
+      </Sheet>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 py-3 bg-background border-b">
+          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)}>
+            <Menu className="size-5" />
+          </Button>
+          <div className="flex items-center gap-2 flex-1">
+            <div className="size-7 rounded-md bg-emerald-600 flex items-center justify-center text-white">
+              <HeartPulse className="size-4" />
+            </div>
+            <span className="font-semibold">ShiftGrid</span>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => setView('notifications')} className="relative">
+            <Bell className="size-5" />
+            {unreadNotifs > 0 && <span className="absolute top-1 right-1 size-2 bg-rose-500 rounded-full" />}
+          </Button>
+        </header>
+
+        <main className="flex-1 min-w-0">{children}</main>
+      </div>
+    </div>
+  )
+}
