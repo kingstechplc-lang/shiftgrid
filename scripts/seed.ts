@@ -193,6 +193,19 @@ async function main() {
       locum: { shiftStart: new Date(now + 0.2*day), shiftEnd: new Date(now + 0.5*day), rate: 260, rateUnit: 'hourly' } },
     { adminIdx: 2, hospitalIdx: 1, type: OfferType.permanent, title: 'Clinical Psychologist — Mental Health Program', specialty: 'Psychology', status: OfferStatus.published,
       perm: { employmentType: 'full-time', salaryMin: 95000, salaryMax: 115000, benefits: 'Comprehensive benefits, supervision hours toward licensure supported.' } },
+    // Additional offers for richer demo data
+    { adminIdx: 0, hospitalIdx: 0, type: OfferType.locum, title: 'Locum Trauma Surgeon — On-Call', specialty: 'Surgery', status: OfferStatus.published, urgent: true,
+      locum: { shiftStart: new Date(now + 2*day), shiftEnd: new Date(now + 3*day), rate: 320, rateUnit: 'hourly' } },
+    { adminIdx: 1, hospitalIdx: 0, type: OfferType.permanent, title: 'Psychiatric Nurse Practitioner', specialty: 'Psychology', status: OfferStatus.published,
+      perm: { employmentType: 'full-time', salaryMin: 125000, salaryMax: 148000, benefits: 'Pension, CE allowance, supervision provided.' } },
+    { adminIdx: 2, hospitalIdx: 1, type: OfferType.locum, title: 'Locum ER RN — Day Shifts', specialty: 'ICU Nursing', status: OfferStatus.published,
+      locum: { shiftStart: new Date(now + 7*day), shiftEnd: new Date(now + 9*day), rate: 60, rateUnit: 'hourly' } },
+    { adminIdx: 3, hospitalIdx: 1, type: OfferType.permanent, title: 'Orthopaedic Surgeon — Joint Replacement', specialty: 'Orthopaedics', status: OfferStatus.published,
+      perm: { employmentType: 'full-time', salaryMin: 420000, salaryMax: 510000, benefits: 'CMPA reimbursement, 7 weeks vacation, OR block time guaranteed.' } },
+    { adminIdx: 4, hospitalIdx: 2, type: OfferType.locum, title: 'Locum Pediatrician — Weekend Clinic', specialty: 'Pediatric Nursing', status: OfferStatus.published,
+      locum: { shiftStart: new Date(now + 5*day), shiftEnd: new Date(now + 6*day), rate: 200, rateUnit: 'hourly' } },
+    { adminIdx: 5, hospitalIdx: 2, type: OfferType.permanent, title: 'Internal Medicine Hospitalist', specialty: 'Internal Medicine', status: OfferStatus.published,
+      perm: { employmentType: 'full-time', salaryMin: 320000, salaryMax: 380000, benefits: 'Block scheduling (7 on / 7 off), comprehensive benefits, RRSP match.' } },
   ]
 
   const offers: any[] = []
@@ -242,6 +255,15 @@ async function main() {
     { offerIdx: 13, staffIdx: 0, status: ApplicationStatus.accepted, daysAgo: 1, note: 'Confirming availability for tonight.' },
     { offerIdx: 2, staffIdx: 1, status: ApplicationStatus.applied, daysAgo: 1 },
     { offerIdx: 7, staffIdx: 4, status: ApplicationStatus.applied, daysAgo: 3 },
+    // Applications to additional offers
+    { offerIdx: 15, staffIdx: 7, status: ApplicationStatus.applied, daysAgo: 2, note: 'Sub-specialty in trauma imaging — happy to cover call.' },
+    { offerIdx: 17, staffIdx: 3, status: ApplicationStatus.under_review, daysAgo: 3, note: 'Peds ED experience directly transferable to weekend clinic.' },
+    { offerIdx: 17, staffIdx: 1, status: ApplicationStatus.applied, daysAgo: 1 },
+    { offerIdx: 18, staffIdx: 2, status: ApplicationStatus.shortlisted, daysAgo: 4, note: 'Block scheduling fits perfectly — 7 on 7 off is ideal.' },
+    { offerIdx: 18, staffIdx: 6, status: ApplicationStatus.applied, daysAgo: 2 },
+    { offerIdx: 16, staffIdx: 0, status: ApplicationStatus.applied, daysAgo: 5 },
+    { offerIdx: 14, staffIdx: 5, status: ApplicationStatus.under_review, daysAgo: 4 },
+    { offerIdx: 14, staffIdx: 6, status: ApplicationStatus.applied, daysAgo: 2 },
   ]
   for (const a of appSpecs) {
     const offer = offers[a.offerIdx]
@@ -271,6 +293,13 @@ async function main() {
   await db.message.create({ data: { offerId: offers[0].id, senderId: staff[0].id, recipientId: admins[0].id, body: 'Hi Sarah — yes, ACLS is valid until late 2026. I can forward the certificate.', read: true, createdAt: new Date(now - 2*day + 3600*1000) } })
   await db.message.create({ data: { offerId: offers[0].id, senderId: admins[0].id, recipientId: staff[0].id, body: 'Great, please do. Looking forward to having you on the weekend.', read: true, createdAt: new Date(now - 1*day) } })
   await db.message.create({ data: { offerId: offers[4].id, senderId: admins[2].id, recipientId: staff[2].id, body: 'Hi Kevin — we\u2019d love to extend an offer for the 2-week block. Please review the terms in your dashboard.', createdAt: new Date(now - 1*day) } })
+  // Additional message threads
+  await db.message.create({ data: { offerId: offers[1].id, senderId: admins[0].id, recipientId: staff[0].id, body: 'Hi James — thanks for your interest in the Cardiologist role. Are you available for an interview next week?', createdAt: new Date(now - 4*day) } })
+  await db.message.create({ data: { offerId: offers[1].id, senderId: staff[0].id, recipientId: admins[0].id, body: 'Hi Sarah — yes, Tuesday or Thursday afternoon works. Happy to come on-site or do a video call.', read: true, createdAt: new Date(now - 4*day + 7200*1000) } })
+  await db.message.create({ data: { offerId: offers[18].id, senderId: admins[5].id, recipientId: staff[2].id, body: 'Hi Kevin — your background is a great fit for the Hospitalist role. Can we schedule a quick call?', createdAt: new Date(now - 2*day) } })
+  await db.message.create({ data: { offerId: offers[17].id, senderId: admins[4].id, recipientId: staff[3].id, body: 'Hi Sofia — thanks for applying to the weekend peds clinic. We\u2019re reviewing applications now.', createdAt: new Date(now - 2*day) } })
+  await db.message.create({ data: { senderId: admins[2].id, recipientId: staff[5].id, body: 'Hi Hannah — we liked your physiotherapy application. Could you share a reference contact?', createdAt: new Date(now - 5*day) } })
+  await db.message.create({ data: { senderId: staff[5].id, recipientId: admins[2].id, body: 'Hi Priya — sure, I\u2019ll email you the details today. Thanks for getting back to me!', read: true, createdAt: new Date(now - 5*day + 5400*1000) } })
 
   console.log('Creating notifications...')
   await db.notification.create({ data: { userId: staff[0].id, type: 'message', title: 'New message from Sarah Chen', body: 'Hi James — thanks for applying! Could you confirm...', createdAt: new Date(now - 2*day) } })
@@ -283,6 +312,16 @@ async function main() {
   await db.notification.create({ data: { userId: staff[0].id, type: 'urgent_shift', title: 'Shift starts in 24 hours', body: 'Locum ER Physician — Stat (Tonight). Please confirm.', createdAt: new Date(now - 0.1*day) } })
   await db.notification.create({ data: { userId: admins[0].id, type: 'application', title: 'New application received', body: 'James Morrison applied to Locum ER Physician — Weekend Coverage.', createdAt: new Date(now - 3*day) } })
   await db.notification.create({ data: { userId: admins[2].id, type: 'application', title: 'New application received', body: 'Kevin Park applied to Locum Hospitalist — 2-Week Block.', createdAt: new Date(now - 5*day) } })
+  // Additional notifications
+  await db.notification.create({ data: { userId: staff[2].id, type: 'message', title: 'New message from Omar Saleh', body: 'Hi Kevin — your background is a great fit...', createdAt: new Date(now - 2*day) } })
+  await db.notification.create({ data: { userId: staff[3].id, type: 'message', title: 'New message from Linda Ford', body: 'Hi Sofia — thanks for applying to the weekend peds clinic...', createdAt: new Date(now - 2*day) } })
+  await db.notification.create({ data: { userId: staff[5].id, type: 'message', title: 'New message from Priya Nair', body: 'Hi Hannah — we liked your physiotherapy application...', createdAt: new Date(now - 5*day) } })
+  await db.notification.create({ data: { userId: staff[7].id, type: 'match', title: 'New offer matches your profile', body: 'Locum Trauma Surgeon — On-Call at St. Mary\u2019s.', createdAt: new Date(now - 1*day) } })
+  await db.notification.create({ data: { userId: staff[6].id, type: 'match', title: 'New offer matches your profile', body: 'Internal Medicine Hospitalist at Northgate Community.', createdAt: new Date(now - 3*day) } })
+  await db.notification.create({ data: { userId: staff[5].id, type: 'credential_expiry', title: 'Physiotherapists of Ontario license expires in 28 days', body: 'Renew before it lapses.', createdAt: new Date(now - 1*day) } })
+  await db.notification.create({ data: { userId: admins[4].id, type: 'application', title: 'New application received', body: 'Sofia Delgado applied to Locum Pediatrician — Weekend Clinic.', createdAt: new Date(now - 3*day) } })
+  await db.notification.create({ data: { userId: admins[5].id, type: 'application', title: 'New application received', body: 'Kevin Park applied to Internal Medicine Hospitalist.', createdAt: new Date(now - 4*day) } })
+  await db.notification.create({ data: { userId: admins[0].id, type: 'application', title: 'New application received', body: 'Carlos Rivera applied to Psychiatric Nurse Practitioner.', createdAt: new Date(now - 5*day) } })
 
   console.log('Creating audit events...')
   for (const o of offers) {
