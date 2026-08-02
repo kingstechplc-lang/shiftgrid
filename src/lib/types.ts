@@ -4,6 +4,8 @@ export type SafeUser = {
   email: string
   name: string
   role: 'super_admin' | 'hospital_admin' | 'staff'
+  authProvider: string
+  emailVerified: Date | null
   hospitalId: string | null
   hospital?: { id: string; name: string; verified: boolean } | null
   specialty: string | null

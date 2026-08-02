@@ -60,9 +60,11 @@ enum ApplicationStatus {
 model User {
   id              String   @id @default(cuid())
   email           String   @unique
-  passwordHash    String
+  passwordHash    String?
   name            String
   role            Role     @default(staff)
+  authProvider    String   @default("local")  // "local" | "google"
+  emailVerified   DateTime?
   hospitalId      String?
   hospital        Hospital? @relation(fields: [hospitalId], references: [id])
   specialty       String?
@@ -82,6 +84,21 @@ model User {
   notifications Notification[]
   savedOffers   SavedOffer[]
   offersCreated Offer[]
+  verificationTokens VerificationToken[]
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique  // long token for email link
+  code      String   // 6-digit code for manual entry
+  type      String   @default("email_verification")  // "email_verification" | "password_reset"
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Offer {

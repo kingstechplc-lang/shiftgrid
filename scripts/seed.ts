@@ -56,19 +56,19 @@ async function main() {
 
   console.log('Creating admins...')
   const admins = await Promise.all([
-    db.user.create({ data: { email: 'sarah.chen@stmarys.test', name: 'Sarah Chen', passwordHash: PASSWORD, role: Role.hospital_admin, hospitalId: hospitals[0].id } }),
-    db.user.create({ data: { email: 'mark.lu@stmarys.test', name: 'Mark Lu', passwordHash: PASSWORD, role: Role.hospital_admin, hospitalId: hospitals[0].id } }),
-    db.user.create({ data: { email: 'priya.n@lakeside.test', name: 'Priya Nair', passwordHash: PASSWORD, role: Role.hospital_admin, hospitalId: hospitals[1].id } }),
-    db.user.create({ data: { email: 'david.k@lakeside.test', name: 'David Kim', passwordHash: PASSWORD, role: Role.hospital_admin, hospitalId: hospitals[1].id } }),
-    db.user.create({ data: { email: 'linda.f@northgate.test', name: 'Linda Ford', passwordHash: PASSWORD, role: Role.hospital_admin, hospitalId: hospitals[2].id } }),
-    db.user.create({ data: { email: 'omar.s@northgate.test', name: 'Omar Saleh', passwordHash: PASSWORD, role: Role.hospital_admin, hospitalId: hospitals[2].id } }),
+    db.user.create({ data: { email: 'sarah.chen@stmarys.test', name: 'Sarah Chen', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.hospital_admin, hospitalId: hospitals[0].id } }),
+    db.user.create({ data: { email: 'mark.lu@stmarys.test', name: 'Mark Lu', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.hospital_admin, hospitalId: hospitals[0].id } }),
+    db.user.create({ data: { email: 'priya.n@lakeside.test', name: 'Priya Nair', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.hospital_admin, hospitalId: hospitals[1].id } }),
+    db.user.create({ data: { email: 'david.k@lakeside.test', name: 'David Kim', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.hospital_admin, hospitalId: hospitals[1].id } }),
+    db.user.create({ data: { email: 'linda.f@northgate.test', name: 'Linda Ford', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.hospital_admin, hospitalId: hospitals[2].id } }),
+    db.user.create({ data: { email: 'omar.s@northgate.test', name: 'Omar Saleh', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.hospital_admin, hospitalId: hospitals[2].id } }),
   ])
 
   console.log('Creating staff...')
   const staff = await Promise.all([
     db.user.create({
       data: {
-        email: 'james.morrison@staff.test', name: 'James Morrison', passwordHash: PASSWORD, role: Role.staff,
+        email: 'james.morrison@staff.test', name: 'James Morrison', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.staff,
         specialty: 'Emergency Medicine', experienceYears: 8, location: 'Toronto, ON',
         availability: 'Weekends, evenings', preferredTypes: 'locum,permanent',
         bio: 'Board-certified ER physician with 8 years of experience in high-volume urban trauma centres.',
@@ -76,7 +76,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: 'anita.rao@staff.test', name: 'Anita Rao', passwordHash: PASSWORD, role: Role.staff,
+        email: 'anita.rao@staff.test', name: 'Anita Rao', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.staff,
         specialty: 'ICU Nursing', experienceYears: 6, location: 'Mississauga, ON',
         availability: 'Full-time', preferredTypes: 'permanent',
         bio: 'Critical care RN with CCRN certification. Experienced in ECMO and post-cardiac surgical care.',
@@ -84,7 +84,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: 'kevin.park@staff.test', name: 'Kevin Park', passwordHash: PASSWORD, role: Role.staff,
+        email: 'kevin.park@staff.test', name: 'Kevin Park', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.staff,
         specialty: 'Internal Medicine', experienceYears: 4, location: 'Toronto, ON',
         availability: 'Flexible', preferredTypes: 'locum',
         bio: 'IM hospitalist looking for short-term locum blocks. Comfortable with admissions and code response.',
@@ -92,7 +92,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: 'sofia.delgado@staff.test', name: 'Sofia Delgado', passwordHash: PASSWORD, role: Role.staff,
+        email: 'sofia.delgado@staff.test', name: 'Sofia Delgado', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.staff,
         specialty: 'Pediatric Nursing', experienceYears: 10, location: 'North York, ON',
         availability: 'Part-time', preferredTypes: 'locum,permanent',
         bio: 'Pediatric RN with extensive peds ED experience. Bilingual EN/ES.',
@@ -100,7 +100,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: 'robert.ng@staff.test', name: 'Robert Ng', passwordHash: PASSWORD, role: Role.staff,
+        email: 'robert.ng@staff.test', name: 'Robert Ng', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.staff,
         specialty: 'Anesthesiology', experienceYears: 12, location: 'Toronto, ON',
         availability: 'Select weekends', preferredTypes: 'locum',
         bio: 'Staff anesthesiologist seeking supplemental locum shifts. Regional anesthesia sub-specialty.',
@@ -108,7 +108,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: 'hannah.yusuf@staff.test', name: 'Hannah Yusuf', passwordHash: PASSWORD, role: Role.staff,
+        email: 'hannah.yusuf@staff.test', name: 'Hannah Yusuf', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.staff,
         specialty: 'Physiotherapy', experienceYears: 5, location: 'Mississauga, ON',
         availability: 'Full-time', preferredTypes: 'permanent',
         bio: 'Registered physiotherapist with orthopaedic and post-surgical rehab focus.',
@@ -116,7 +116,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: 'carlos.rivera@staff.test', name: 'Carlos Rivera', passwordHash: PASSWORD, role: Role.staff,
+        email: 'carlos.rivera@staff.test', name: 'Carlos Rivera', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.staff,
         specialty: 'Family Medicine', experienceYears: 3, location: 'North York, ON',
         availability: 'Full-time', preferredTypes: 'permanent',
         bio: 'Family physician relocating to GTA; looking for a permanent outpatient or hybrid role.',
@@ -124,7 +124,7 @@ async function main() {
     }),
     db.user.create({
       data: {
-        email: 'emily.tan@staff.test', name: 'Emily Tan', passwordHash: PASSWORD, role: Role.staff,
+        email: 'emily.tan@staff.test', name: 'Emily Tan', passwordHash: PASSWORD, emailVerified: new Date(), authProvider: "local", role: Role.staff,
         specialty: 'Diagnostic Radiology', experienceYears: 7, location: 'Toronto, ON',
         availability: 'Evenings / weekends', preferredTypes: 'locum',
         bio: 'Radiologist with teleradiology experience. Available for evening/weekend locum reads.',

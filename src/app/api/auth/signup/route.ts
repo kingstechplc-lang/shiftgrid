@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { hashPassword, SESSION_COOKIE } from '@/lib/auth'
+import { hashPassword, SESSION_COOKIE, toSafeUser } from '@/lib/auth'
 import { Role } from '@prisma/client'
+import { sendVerification } from '@/lib/verification'
+import { isDemoMode } from '@/lib/email'
 
 // POST /api/auth/signup
 export async function POST(req: NextRequest) {
@@ -13,7 +15,8 @@ export async function POST(req: NextRequest) {
   if (!['staff', 'hospital_admin'].includes(role)) {
     return NextResponse.json({ error: 'Invalid role.' }, { status: 400 })
   }
-  const exists = await db.user.findUnique({ where: { email: String(email).toLowerCase().trim() } })
+  const normalizedEmail = String(email).toLowerCase().trim()
+  const exists = await db.user.findUnique({ where: { email: normalizedEmail } })
   if (exists) return NextResponse.json({ error: 'Email already in use.' }, { status: 409 })
 
   let hospitalId: string | null = null
@@ -25,11 +28,13 @@ export async function POST(req: NextRequest) {
 
   const user = await db.user.create({
     data: {
-      email: String(email).toLowerCase().trim(),
+      email: normalizedEmail,
       passwordHash: hashPassword(password),
       name: String(name),
       role: role as Role,
       hospitalId,
+      authProvider: 'local',
+      emailVerified: null,  // must verify before they can log in
       specialty: specialty ?? null,
       experienceYears: experienceYears ? Number(experienceYears) : null,
       location: location ?? null,
@@ -40,12 +45,16 @@ export async function POST(req: NextRequest) {
     include: { hospital: true },
   })
 
-  const res = NextResponse.json({
-    id: user.id, email: user.email, name: user.name, role: user.role,
-    hospitalId: user.hospitalId, hospital: user.hospital,
-  })
-  res.cookies.set(SESSION_COOKIE, user.id, {
-    httpOnly: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/',
-  })
-  return res
+  // Send verification email (demo mode returns the code so the UI can display it)
+  const emailResult = await sendVerification(user.id, user.email, user.name)
+
+  // Do NOT set the session cookie — user must verify email first.
+  // Return pending state so the frontend can show the verification screen.
+  return NextResponse.json({
+    pendingVerification: true,
+    email: user.email,
+    name: user.name,
+    userId: user.id,
+    demoCode: isDemoMode() ? emailResult.code : undefined,
+  }, { status: 201 })
 }
