@@ -24,6 +24,10 @@ export function AdminOffersList() {
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('all')
   const [type, setType] = useState('all')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+  const PAGE_SIZE = 10
 
   useEffect(() => {
     const params = new URLSearchParams()
@@ -31,9 +35,14 @@ export function AdminOffersList() {
     if (q) params.set('q', q)
     if (status !== 'all') params.set('status', status)
     if (type !== 'all') params.set('type', type)
-    params.set('pageSize', '100')
-    api<{ items: any[] }>(`/api/offers?${params}`).then(r => setItems(r.items)).finally(() => setLoading(false))
-  }, [q, status, type, refreshKey])
+    params.set('pageSize', String(PAGE_SIZE))
+    params.set('page', String(page))
+    api<{ items: any[]; total: number; totalPages: number }>(`/api/offers?${params}`).then(r => {
+      setItems(r.items)
+      setTotal(r.total)
+      setTotalPages(r.totalPages ?? 1)
+    }).finally(() => setLoading(false))
+  }, [q, status, type, refreshKey, page])
 
   async function handleAction(o: any, action: 'publish' | 'pause' | 'close' | 'duplicate' | 'delete') {
     try {
@@ -41,7 +50,14 @@ export function AdminOffersList() {
         await api(`/api/offers/${o.id}/duplicate`, { method: 'POST' })
         toast({ title: 'Offer duplicated', description: 'A draft copy was created.' })
       } else if (action === 'delete') {
-        if (!confirm(`Permanently delete "${o.title}"? This cannot be undone.`)) return
+        // Use a checkbox-confirmed dialog for deletes
+        const confirmed = window.confirm(`Permanently delete "${o.title}"?\n\nThis action CANNOT be undone. Type "DELETE" in the prompt to confirm.`)
+        if (!confirmed) return
+        const typed = window.prompt(`Type DELETE to permanently remove "${o.title}":`)
+        if (typed !== 'DELETE') {
+          toast({ title: 'Delete cancelled', description: 'You must type DELETE to confirm.' })
+          return
+        }
         await api(`/api/offers/${o.id}`, { method: 'DELETE' })
         toast({ title: 'Offer deleted' })
       } else {
@@ -187,6 +203,24 @@ export function AdminOffersList() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-muted-foreground">
+            Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+              Previous
+            </Button>
+            <span className="flex items-center px-3 text-sm">Page {page} of {totalPages}</span>
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+              Next
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -18,6 +18,7 @@ model Hospital {
   bannerUrl   String?
   address     String?
   verified    Boolean  @default(false)
+  status      String   @default("active")  // "active" | "suspended" | "banned"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -66,6 +67,7 @@ model User {
   role            Role     @default(staff)
   authProvider    String   @default("local")  // "local" | "google"
   emailVerified   DateTime?
+  status          String   @default("active")  // "active" | "suspended" | "banned"
   hospitalId      String?
   hospital        Hospital? @relation(fields: [hospitalId], references: [id])
   specialty       String?
@@ -76,6 +78,7 @@ model User {
   bio             String?
   location        String?
   preferredTypes  String?  // comma-separated "locum,permanent"
+  offerTypes      String?  // comma-separated "locum,permanent,both" — what admin can post
   // Personal info
   profilePhoto    String?
   phoneNumber     String?

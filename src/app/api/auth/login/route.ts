@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { hashPassword, SESSION_COOKIE, toSafeUser } from '@/lib/auth'
+import { verifyPassword, SESSION_COOKIE, toSafeUser } from '@/lib/auth'
 import { sendVerification } from '@/lib/verification'
 import { isDemoMode } from '@/lib/email'
 
@@ -15,15 +15,20 @@ export async function POST(req: NextRequest) {
     where: { email: normalizedEmail },
     include: { hospital: true },
   })
-  if (!user || !user.passwordHash || user.passwordHash !== hashPassword(password)) {
+  if (!user || !user.passwordHash || !verifyPassword(password, user.passwordHash)) {
     return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
+  }
+
+  // Check account status (banned/suspended)
+  if (user.status === 'banned') {
+    return NextResponse.json({ error: 'Your account has been banned. Please contact support.' }, { status: 403 })
+  }
+  if (user.status === 'suspended') {
+    return NextResponse.json({ error: 'Your account has been suspended. Please contact support.' }, { status: 403 })
   }
 
   // Email verification gate
   if (!user.emailVerified) {
-    // Don't auto-resend on every login attempt — it invalidates previous codes
-    // and confuses users. Only return the pending state; they can request a resend.
-    // Check if there's a valid recent code still active (within 10 min)
     const recentToken = await db.verificationToken.findFirst({
       where: {
         userId: user.id,
@@ -36,11 +41,9 @@ export async function POST(req: NextRequest) {
 
     let demoCode: string | undefined
     if (!recentToken) {
-      // No active code — generate a new one
       const emailResult = await sendVerification(user.id, user.email, user.name)
       demoCode = isDemoMode() ? emailResult.code : undefined
     } else if (isDemoMode()) {
-      // In demo mode, return the existing code so the user can see it
       demoCode = recentToken.code
     }
 

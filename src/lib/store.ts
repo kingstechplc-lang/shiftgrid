@@ -27,6 +27,7 @@ export type View =
   | 'super-hospitals'
   | 'super-users'
   | 'super-offers'
+  | 'super-messages'
 
 type AppState = {
   user: SafeUser | null

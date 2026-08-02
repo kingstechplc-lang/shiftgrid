@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import {
   HeartPulse, LayoutDashboard, Briefcase, Inbox, Bookmark,
   User, MessageSquare, Bell, Building2, Users, Settings,
-  LogOut, Menu, FileText, Search, ShieldCheck, Stethoscope, Globe,
+  LogOut, Menu, FileText, Search, ShieldCheck, Stethoscope, Globe, Send,
 } from 'lucide-react'
 import type { View } from '@/lib/store'
 import type { SafeUser } from '@/lib/types'
@@ -44,7 +44,8 @@ const SUPER_ADMIN_NAV: NavItem[] = [
   { view: 'super-hospitals', label: 'Hospitals', icon: <Building2 className="size-4" /> },
   { view: 'super-users', label: 'Users', icon: <Users className="size-4" /> },
   { view: 'super-offers', label: 'All Offers', icon: <Briefcase className="size-4" /> },
-  { view: 'messages', label: 'Messages', icon: <MessageSquare className="size-4" /> },
+  { view: 'super-messages', label: 'Global Messages', icon: <Send className="size-4" /> },
+  { view: 'messages', label: 'My Messages', icon: <MessageSquare className="size-4" /> },
   { view: 'notifications', label: 'Notifications', icon: <Bell className="size-4" /> },
   { view: 'settings', label: 'Settings', icon: <Settings className="size-4" /> },
 ]

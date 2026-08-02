@@ -28,7 +28,15 @@ export function StaffHome() {
   }, [])
 
   if (loading) return <DashboardSkeleton />
-  if (!data) return null
+  if (!data) {
+    return (
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Unable to load dashboard. Please try refreshing.</p>
+        </div>
+      </div>
+    )
+  }
 
   const s = data.stats
   const recommended = data.recommended || []

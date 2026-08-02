@@ -23,10 +23,11 @@ import { HospitalSettings } from '@/components/shiftgrid/hospital-settings'
 import { TeamManagement } from '@/components/shiftgrid/team-management'
 import { SettingsView } from '@/components/shiftgrid/settings'
 import { SuperAdminDashboard, SuperHospitals, SuperUsers, SuperOffers } from '@/components/shiftgrid/super-admin'
+import { GlobalMessages } from '@/components/shiftgrid/global-messages'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Home() {
-  const { user, setUser, view, selectedOfferId, selectedApplicationId } = useApp()
+  const { user, setUser, view, selectedOfferId, selectedApplicationId, setView } = useApp()
   const [booting, setBooting] = useState(true)
 
   // Boot — fetch current user
@@ -35,6 +36,18 @@ export default function Home() {
       if (r.user) setUser(r.user)
     }).finally(() => setBooting(false))
   }, [setUser])
+
+  // Ensure the default view matches the user's role
+  useEffect(() => {
+    if (!user) return
+    if (user.role === 'super_admin' && !view.startsWith('super') && view !== 'messages' && view !== 'notifications' && view !== 'settings') {
+      setView('super-dashboard')
+    } else if (user.role === 'staff' && (view.startsWith('super') || view === 'dashboard')) {
+      setView('home')
+    } else if (user.role === 'hospital_admin' && view.startsWith('super')) {
+      setView('dashboard')
+    }
+  }, [user, view, setView])
 
   if (booting) {
     return (
@@ -68,6 +81,7 @@ function ViewRouter({ view, user, selectedOfferId, selectedApplicationId }: { vi
       case 'super-hospitals': return <SuperHospitals />
       case 'super-users': return <SuperUsers />
       case 'super-offers': return <SuperOffers />
+      case 'super-messages': return <GlobalMessages />
       case 'messages': return <Messages />
       case 'notifications': return <Notifications />
       default: return <SuperAdminDashboard />

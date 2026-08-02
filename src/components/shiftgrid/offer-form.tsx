@@ -101,13 +101,20 @@ export function OfferForm() {
       return
     }
     setSaving(true)
-    const payload = { ...form, status: publish ? 'published' : form.status, requirements: form.requirements }
+    const basePayload = { ...form, status: publish ? 'published' : form.status, requirements: form.requirements }
     try {
       if (editingOffer) {
-        await api(`/api/offers/${editingOffer.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+        await api(`/api/offers/${editingOffer.id}`, { method: 'PATCH', body: JSON.stringify(basePayload) })
         toast({ title: publish ? 'Offer published' : 'Offer updated' })
+      } else if (form.type === 'both') {
+        // Create both a locum and a permanent offer
+        const locumPayload = { ...basePayload, type: 'locum', title: `${basePayload.title} (Locum)` }
+        const permPayload = { ...basePayload, type: 'permanent', title: `${basePayload.title} (Permanent)` }
+        await api('/api/offers', { method: 'POST', body: JSON.stringify(locumPayload) })
+        await api('/api/offers', { method: 'POST', body: JSON.stringify(permPayload) })
+        toast({ title: publish ? '2 offers published (locum + permanent)' : '2 drafts saved' })
       } else {
-        await api('/api/offers', { method: 'POST', body: JSON.stringify(payload) })
+        await api('/api/offers', { method: 'POST', body: JSON.stringify(basePayload) })
         toast({ title: publish ? 'Offer published' : 'Draft saved' })
       }
       refresh()
@@ -120,6 +127,10 @@ export function OfferForm() {
   }
 
   const isLocum = form.type === 'locum'
+  const isPermanent = form.type === 'permanent'
+  const isBoth = form.type === 'both'
+  const showLocumFields = isLocum || isBoth
+  const showPermanentFields = isPermanent || isBoth
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
@@ -142,11 +153,11 @@ export function OfferForm() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Offer type</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => set('type', 'locum')}
-                  className={`p-4 rounded-lg border text-left transition-colors ${isLocum ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border hover:bg-muted'}`}
+                  className={`p-4 rounded-lg border-2 text-left transition-all ${form.type === 'locum' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border hover:bg-muted hover:border-emerald-200'}`}
                 >
                   <div className="font-medium">Locum (temporary)</div>
                   <div className="text-xs text-muted-foreground mt-1">Shift-based, hourly or daily rate</div>
@@ -154,12 +165,25 @@ export function OfferForm() {
                 <button
                   type="button"
                   onClick={() => set('type', 'permanent')}
-                  className={`p-4 rounded-lg border text-left transition-colors ${!isLocum ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border hover:bg-muted'}`}
+                  className={`p-4 rounded-lg border-2 text-left transition-all ${form.type === 'permanent' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border hover:bg-muted hover:border-emerald-200'}`}
                 >
                   <div className="font-medium">Permanent</div>
-                  <div className="text-xs text-muted-foreground mt-1">Full-time / part-time / contract role</div>
+                  <div className="text-xs text-muted-foreground mt-1">Full-time / part-time / contract</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set('type', 'both')}
+                  className={`p-4 rounded-lg border-2 text-left transition-all ${form.type === 'both' ? 'border-violet-500 bg-violet-50 dark:bg-violet-950/30' : 'border-border hover:bg-muted hover:border-violet-200'}`}
+                >
+                  <div className="font-medium">Both (create 2 offers)</div>
+                  <div className="text-xs text-muted-foreground mt-1">Creates a locum + permanent offer</div>
                 </button>
               </div>
+              {form.type === 'both' && (
+                <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">
+                  ℹ️ This will create two separate offers — one locum and one permanent — with the same details. Fill in both the locum and permanent fields below.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -225,10 +249,10 @@ export function OfferForm() {
           </CardContent>
         </Card>
 
-        {/* Type-specific fields */}
-        {isLocum ? (
+        {/* Type-specific fields — show both sections when type is 'both' */}
+        {showLocumFields && (
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2">Locum details</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2">Locum details{isBoth && <span className="text-xs text-violet-600">(for the locum offer)</span>}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -271,9 +295,11 @@ export function OfferForm() {
               )}
             </CardContent>
           </Card>
-        ) : (
+        )}
+
+        {showPermanentFields && (
           <Card>
-            <CardHeader><CardTitle className="text-base">Permanent role details</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Permanent role details{isBoth && <span className="text-xs text-violet-600">(for the permanent offer)</span>}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="emp">Employment type</Label>
@@ -288,11 +314,11 @@ export function OfferForm() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="salMin">Salary min (CAD)</Label>
+                  <Label htmlFor="salMin">Salary min (GHS)</Label>
                   <Input id="salMin" type="number" min={0} value={form.salaryMin} onChange={(e) => set('salaryMin', e.target.value)} placeholder="0" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="salMax">Salary max (CAD)</Label>
+                  <Label htmlFor="salMax">Salary max (GHS)</Label>
                   <Input id="salMax" type="number" min={0} value={form.salaryMax} onChange={(e) => set('salaryMax', e.target.value)} placeholder="0" />
                 </div>
               </div>
