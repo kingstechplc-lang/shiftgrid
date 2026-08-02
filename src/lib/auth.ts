@@ -134,6 +134,7 @@ export function toSafeUser(user: any) {
     preferredTypes: user.preferredTypes,
     offerTypes: user.offerTypes ?? null,
     profilePhoto: user.profilePhoto ?? null,
+    coverPhotoUrl: user.coverPhotoUrl ?? null,
     phoneNumber: user.phoneNumber ?? null,
     dateOfBirth: user.dateOfBirth ?? null,
     gender: user.gender ?? null,

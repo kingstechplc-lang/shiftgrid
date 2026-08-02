@@ -1,0 +1,30 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getCurrentUser } from '@/lib/auth'
+import { db } from '@/lib/db'
+
+export const dynamic = 'force-dynamic'
+
+// POST /api/upload/hospital-logo
+export async function POST(req: NextRequest) {
+  const user = await getCurrentUser()
+  if (!user || (user.role !== 'hospital_admin' && user.role !== 'super_admin') || !user.hospitalId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  try {
+    const formData = await req.formData()
+    const file = formData.get('file') as File | null
+    if (!file) return NextResponse.json({ error: 'No file provided.' }, { status: 400 })
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) return NextResponse.json({ error: 'Invalid file type.' }, { status: 400 })
+    if (file.size > 5 * 1024 * 1024) return NextResponse.json({ error: 'Max 5MB.' }, { status: 400 })
+
+    const bytes = await file.arrayBuffer()
+    const base64 = Buffer.from(bytes).toString('base64')
+    const dataUrl = `data:${file.type};base64,${base64}`
+
+    await db.hospital.update({ where: { id: user.hospitalId }, data: { logoUrl: dataUrl } })
+    return NextResponse.json({ url: dataUrl })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}

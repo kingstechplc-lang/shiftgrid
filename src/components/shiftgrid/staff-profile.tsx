@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import { Building2, MapPin, Save, Briefcase, Calendar, User, Phone, Camera, X, Loader2, CheckCircle2, AlertCircle, Globe } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { GHANA_REGIONS, getDistrictsForRegion, validateGhanaPhone, validateDigitalAddress, SPECIALTIES, AVAILABILITY_OPTIONS } from '@/lib/ghana-data'
+import { ImageUploader } from './image-uploader'
 
 export function StaffProfile() {
   const { user, setUser } = useApp()
@@ -40,6 +41,7 @@ export function StaffProfile() {
         website: user.website ?? '',
         // Personal info
         profilePhoto: user.profilePhoto ?? null,
+        coverPhotoUrl: (user as any).coverPhotoUrl ?? null,
         phoneNumber: user.phoneNumber ?? '',
         dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().slice(0, 10) : '',
         gender: user.gender ?? '',
@@ -165,62 +167,36 @@ export function StaffProfile() {
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
+        {/* ────────────── COVER PHOTO ────────────── */}
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-0 overflow-hidden">
+          <CardHeader><CardTitle className="text-base">Cover Photo</CardTitle></CardHeader>
+          <CardContent>
+            <ImageUploader
+              type="cover_photo"
+              currentUrl={form.coverPhotoUrl}
+              onUploaded={(url) => set('coverPhotoUrl', url)}
+              onRemoved={() => set('coverPhotoUrl', null)}
+              uploadEndpoint="/api/upload/image"
+              altText={`Cover photo of ${user!.name}`}
+              shape="wide"
+              className="w-full"
+            />
+          </CardContent>
+        </Card>
+
         {/* ────────────── PROFILE PHOTO ────────────── */}
         <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-50">
           <CardHeader><CardTitle className="text-base">Profile Photo</CardTitle></CardHeader>
           <CardContent>
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                {form.profilePhoto ? (
-                  <img
-                    src={form.profilePhoto}
-                    alt="Profile"
-                    className="size-24 rounded-full object-cover border-4 border-emerald-100 dark:border-emerald-950"
-                  />
-                ) : (
-                  <Avatar className="size-24 border-4 border-emerald-100 dark:border-emerald-950">
-                    <AvatarFallback className="bg-emerald-100 text-emerald-700 text-2xl font-semibold">
-                      {user!.name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-                {uploading && (
-                  <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
-                    <Loader2 className="size-6 text-white animate-spin" />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                />
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm">{user!.name}</span>
-                  {user!.registrationId && (
-                    <Badge variant="outline" className="font-mono text-[10px] bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 text-emerald-700">
-                      {user!.registrationId}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                    <Camera className="size-4 mr-1" /> {form.profilePhoto ? 'Change photo' : 'Upload photo'}
-                  </Button>
-                  {form.profilePhoto && (
-                    <Button type="button" variant="outline" size="sm" onClick={handleRemovePhoto} className="text-rose-600 hover:bg-rose-50">
-                      <X className="size-4 mr-1" /> Remove
-                    </Button>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  JPG, JPEG, PNG, or WEBP. Max 5MB.
-                </p>
-              </div>
-            </div>
+            <ImageUploader
+              type="profile_photo"
+              currentUrl={form.profilePhoto}
+              onUploaded={(url) => set('profilePhoto', url)}
+              onRemoved={() => set('profilePhoto', null)}
+              uploadEndpoint="/api/upload/image"
+              altText={`Profile photo of ${user!.name}`}
+              shape="circle"
+            />
           </CardContent>
         </Card>
 

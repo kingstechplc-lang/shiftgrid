@@ -11,17 +11,18 @@ datasource db {
 }
 
 model Hospital {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  logoUrl     String?
-  bannerUrl   String?
-  address     String?
-  website     String?
-  verified    Boolean  @default(false)
-  status      String   @default("active")  // "active" | "suspended" | "banned"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  logoUrl       String?
+  bannerUrl     String?
+  coverPhotoUrl String?
+  address       String?
+  website       String?
+  verified      Boolean  @default(false)
+  status        String   @default("active")  // "active" | "suspended" | "banned"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   members  User[]
   offers   Offer[]
@@ -85,6 +86,7 @@ model User {
   offerTypes      String?  // comma-separated "locum,permanent,both" — what admin can post
   // Personal info
   profilePhoto    String?
+  coverPhotoUrl   String?
   phoneNumber     String?
   dateOfBirth     DateTime?
   gender          String?
@@ -106,6 +108,8 @@ model User {
   savedOffers   SavedOffer[]
   offersCreated Offer[]
   verificationTokens VerificationToken[]
+  bannersCreated PlatformBanner[] @relation("BannerCreator")
+  mediaUploaded  MediaAsset[] @relation("MediaUploader")
 }
 
 model VerificationToken {
@@ -134,6 +138,7 @@ model Offer {
   description    String?
   requirements   String?      // JSON string array
   location       String?
+  bannerUrl      String?
   status         OfferStatus  @default(draft)
   visibility     Visibility   @default(public)
   deadline       DateTime?
@@ -231,3 +236,33 @@ model AuditEvent {
   detail    String?
   createdAt DateTime @default(now())
 }
+
+model PlatformBanner {
+  id              String   @id @default(cuid())
+  title           String
+  desktopImageUrl String?
+  mobileImageUrl  String?
+  targetUrl       String?
+  isActive        Boolean  @default(true)
+  displayOrder    Int      @default(0)
+  startDate       DateTime?
+  endDate         DateTime?
+  createdById     String
+  createdBy       User     @relation("BannerCreator", fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model MediaAsset {
+  id           String   @id @default(cuid())
+  url          String   @unique
+  type         String   // "profile_photo" | "cover_photo" | "facility_logo" | "facility_cover" | "shift_banner" | "hero_desktop" | "hero_mobile" | "announcement" | "document"
+  uploadedById String?
+  uploader     User?    @relation("MediaUploader", fields: [uploadedById], references: [id])
+  fileSize     Int?
+  width        Int?
+  height       Int?
+  mimeType     String?
+  createdAt    DateTime @default(now())
+}
+

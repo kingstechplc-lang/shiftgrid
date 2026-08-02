@@ -24,6 +24,8 @@ import { TeamManagement } from '@/components/shiftgrid/team-management'
 import { SettingsView } from '@/components/shiftgrid/settings'
 import { SuperAdminDashboard, SuperHospitals, SuperUsers, SuperOffers } from '@/components/shiftgrid/super-admin'
 import { GlobalMessages } from '@/components/shiftgrid/global-messages'
+import { AdminBanners } from '@/components/shiftgrid/admin-banners'
+import { MediaLibrary } from '@/components/shiftgrid/media-library'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Home() {
@@ -81,6 +83,8 @@ function ViewRouter({ view, user, selectedOfferId, selectedApplicationId }: { vi
       case 'super-hospitals': return <SuperHospitals />
       case 'super-users': return <SuperUsers />
       case 'super-offers': return <SuperOffers />
+      case 'super-banners': return <AdminBanners />
+      case 'super-media': return <MediaLibrary />
       case 'super-messages': return <GlobalMessages />
       case 'messages': return <Messages />
       case 'notifications': return <Notifications />

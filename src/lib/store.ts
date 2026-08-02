@@ -28,6 +28,8 @@ export type View =
   | 'super-users'
   | 'super-offers'
   | 'super-messages'
+  | 'super-banners'
+  | 'super-media'
 
 type AppState = {
   user: SafeUser | null

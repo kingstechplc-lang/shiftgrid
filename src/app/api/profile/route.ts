@@ -22,6 +22,7 @@ export async function PATCH(req: NextRequest) {
 
   // New personal info fields
   if ('profilePhoto' in body) allowed.profilePhoto = body.profilePhoto ?? null
+  if ('coverPhotoUrl' in body) allowed.coverPhotoUrl = body.coverPhotoUrl ?? null
   if ('gender' in body) allowed.gender = body.gender ?? null
   if ('dateOfBirth' in body) allowed.dateOfBirth = body.dateOfBirth ? new Date(body.dateOfBirth) : null
 
