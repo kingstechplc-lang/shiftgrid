@@ -9,12 +9,25 @@ export type SafeUser = {
   hospitalId: string | null
   hospital?: { id: string; name: string; verified: boolean } | null
   specialty: string | null
+  specialtyOther: string | null
   experienceYears: number | null
   resumeUrl: string | null
   availability: string | null
   bio: string | null
   location: string | null
   preferredTypes: string | null
+  // Personal info
+  profilePhoto: string | null
+  phoneNumber: string | null
+  dateOfBirth: Date | null
+  gender: string | null
+  // Address info
+  region: string | null
+  district: string | null
+  townCity: string | null
+  streetAddress: string | null
+  landmark: string | null
+  digitalAddress: string | null
   createdAt: Date
 }
 

@@ -68,12 +68,25 @@ model User {
   hospitalId      String?
   hospital        Hospital? @relation(fields: [hospitalId], references: [id])
   specialty       String?
+  specialtyOther  String?  // when specialty is "Other"
   experienceYears Int?
   resumeUrl       String?
   availability    String?
   bio             String?
   location        String?
   preferredTypes  String?  // comma-separated "locum,permanent"
+  // Personal info
+  profilePhoto    String?
+  phoneNumber     String?
+  dateOfBirth     DateTime?
+  gender          String?
+  // Address info (Ghana)
+  region          String?
+  district        String?
+  townCity        String?
+  streetAddress   String?
+  landmark        String?
+  digitalAddress  String?  // GhanaPost GPS format e.g. GA-123-4567
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

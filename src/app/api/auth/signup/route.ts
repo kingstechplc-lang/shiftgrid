@@ -8,7 +8,7 @@ import { isDemoMode } from '@/lib/email'
 // POST /api/auth/signup
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
-  const { email, password, name, role, hospitalName, hospitalAddress, specialty, experienceYears, location, availability, preferredTypes, bio } = body || {}
+  const { email, password, name, role, hospitalName, hospitalAddress, specialty, specialtyOther, experienceYears, location, availability, preferredTypes, bio } = body || {}
   if (!email || !password || !name || !role) {
     return NextResponse.json({ error: 'Email, password, name, and role are required.' }, { status: 400 })
   }
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       authProvider: 'local',
       emailVerified: null,  // must verify before they can log in
       specialty: specialty ?? null,
+      specialtyOther: specialty === 'Other' ? (specialtyOther ?? null) : null,
       experienceYears: experienceYears ? Number(experienceYears) : null,
       location: location ?? null,
       availability: availability ?? null,

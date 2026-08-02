@@ -59,11 +59,24 @@ export function toSafeUser(user: any) {
     hospitalId: user.hospitalId,
     hospital: user.hospital ? { id: user.hospital.id, name: user.hospital.name, verified: user.hospital.verified, address: user.hospital.address, description: user.hospital.description } : null,
     specialty: user.specialty,
+    specialtyOther: user.specialtyOther ?? null,
     experienceYears: user.experienceYears,
     resumeUrl: user.resumeUrl,
     availability: user.availability,
     bio: user.bio,
     location: user.location,
     preferredTypes: user.preferredTypes,
+    // Personal info
+    profilePhoto: user.profilePhoto ?? null,
+    phoneNumber: user.phoneNumber ?? null,
+    dateOfBirth: user.dateOfBirth ?? null,
+    gender: user.gender ?? null,
+    // Address info
+    region: user.region ?? null,
+    district: user.district ?? null,
+    townCity: user.townCity ?? null,
+    streetAddress: user.streetAddress ?? null,
+    landmark: user.landmark ?? null,
+    digitalAddress: user.digitalAddress ?? null,
   }
 }

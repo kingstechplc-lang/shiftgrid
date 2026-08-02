@@ -5,8 +5,7 @@ import { api } from '@/lib/api-client'
 import { useApp } from '@/lib/store'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { HeartPulse, MailCheck, ArrowLeft, RefreshCw, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react'
+import { HeartPulse, MailCheck, ArrowLeft, RefreshCw, CheckCircle2, AlertCircle, Sparkles, Eye, Copy, Check } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export function VerifyEmailScreen({ email, name, userId, demoCode }: {
@@ -23,16 +22,14 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
   const [verified, setVerified] = useState(false)
   const [cooldown, setCooldown] = useState(0)
   const [resending, setResending] = useState(false)
+  const [showDemoCode, setShowDemoCode] = useState(false)
+  const [copied, setCopied] = useState(false)
   const inputs = useRef<(HTMLInputElement | null)[]>([])
 
-  // Auto-fill demo code if in demo mode
+  // Auto-focus first digit on mount
   useEffect(() => {
-    if (demoCode && demoCode.length === 6) {
-      setDigits(demoCode.split(''))
-      // Auto-submit after filling
-      setTimeout(() => submitCode(demoCode), 500)
-    }
-  }, [demoCode])
+    inputs.current[0]?.focus()
+  }, [])
 
   // Cooldown timer for resend
   useEffect(() => {
@@ -41,27 +38,14 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
     return () => clearTimeout(t)
   }, [cooldown])
 
-  // Auto-focus first digit on mount
-  useEffect(() => {
-    inputs.current[0]?.focus()
-  }, [])
-
   function handleDigitChange(index: number, value: string) {
-    // Only allow digits
     const digit = value.replace(/\D/g, '').slice(-1)
     const next = [...digits]
     next[index] = digit
     setDigits(next)
     setError(null)
-
-    // Auto-advance
     if (digit && index < 5) {
       inputs.current[index + 1]?.focus()
-    }
-
-    // Auto-submit when all 6 digits filled
-    if (digit && index === 5 && next.every(d => d)) {
-      submitCode(next.join(''))
     }
   }
 
@@ -80,7 +64,7 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
       const next = pasted.split('').concat(Array(6 - pasted.length).fill(''))
       setDigits(next)
       if (pasted.length === 6) {
-        submitCode(pasted)
+        inputs.current[5]?.focus()
       } else {
         inputs.current[pasted.length]?.focus()
       }
@@ -102,7 +86,7 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
       if (res.success && res.user) {
         setVerified(true)
         toast({ title: 'Email verified!', description: 'Welcome to ShiftGrid.' })
-        setTimeout(() => setUser(res.user), 1200)
+        setTimeout(() => setUser(res.user), 1500)
       } else {
         setError(res.error || 'Invalid code.')
         setDigits(['', '', '', '', '', ''])
@@ -130,9 +114,8 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
         toast({ title: 'Verification code sent', description: `Check ${email}` })
         setCooldown(30)
         if (res.demoCode) {
-          // Auto-fill new demo code
-          setDigits(res.demoCode.split(''))
-          setTimeout(() => submitCode(res.demoCode!), 500)
+          // Update the demoCode prop by showing it
+          setShowDemoCode(true)
         }
       } else {
         setError(res.error)
@@ -145,19 +128,37 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
     }
   }
 
+  function copyDemoCode() {
+    if (demoCode) {
+      navigator.clipboard.writeText(demoCode)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      toast({ title: 'Code copied!', description: `Copied ${demoCode} to clipboard` })
+    }
+  }
+
+  function fillDemoCode() {
+    if (demoCode) {
+      setDigits(demoCode.split(''))
+      inputs.current[5]?.focus()
+      toast({ title: 'Code filled', description: 'Click "Verify email" to continue' })
+    }
+  }
+
   if (verified) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100 dark:from-emerald-950 dark:via-teal-950 dark:to-emerald-900 p-6">
-        <Card className="max-w-md w-full border-0 shadow-2xl">
+        <Card className="max-w-md w-full border-0 shadow-2xl animate-scale-in">
           <CardContent className="p-8 text-center">
-            <div className="size-20 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center mx-auto mb-4">
+            <div className="size-20 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
               <CheckCircle2 className="size-10 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <h1 className="text-2xl font-bold mb-2">Email verified!</h1>
-            <p className="text-muted-foreground mb-6">Taking you to your dashboard…</p>
-            <div className="flex items-center justify-center gap-2 text-emerald-600">
+            <h1 className="text-2xl font-bold mb-2 animate-fade-in-up">Email verified!</h1>
+            <p className="text-muted-foreground mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s', opacity: 0 }}>Taking you to your dashboard…</p>
+            <div className="flex items-center justify-center gap-2 text-emerald-600 animate-fade-in" style={{ animationDelay: '0.3s', opacity: 0 }}>
               <Sparkles className="size-4 animate-pulse" />
               <span className="text-sm font-medium">Welcome to ShiftGrid</span>
+              <Sparkles className="size-4 animate-pulse" />
             </div>
           </CardContent>
         </Card>
@@ -169,41 +170,58 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100 dark:from-emerald-950 dark:via-teal-950 dark:to-emerald-900 p-6">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="size-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white">
+        <div className="flex items-center justify-center gap-2 mb-8 animate-fade-in">
+          <div className="size-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white animate-float">
             <HeartPulse className="size-6" />
           </div>
           <span className="text-2xl font-semibold tracking-tight">ShiftGrid</span>
         </div>
 
-        <Card className="border-0 shadow-2xl">
+        <Card className="border-0 shadow-2xl animate-scale-in">
           <CardContent className="p-8">
-            {/* Icon */}
-            <div className="size-16 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center mx-auto mb-5">
+            {/* Icon with pulse glow */}
+            <div className="size-16 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center mx-auto mb-5 animate-pulse-glow">
               <MailCheck className="size-8 text-emerald-600 dark:text-emerald-400" />
             </div>
 
-            <h1 className="text-2xl font-bold text-center mb-2">Verify your email</h1>
-            <p className="text-center text-muted-foreground text-sm mb-1">
+            <h1 className="text-2xl font-bold text-center mb-2 animate-fade-in-up">Verify your email</h1>
+            <p className="text-center text-muted-foreground text-sm mb-1 animate-fade-in-up" style={{ animationDelay: '0.05s', opacity: 0 }}>
               We sent a 6-digit verification code to
             </p>
-            <p className="text-center font-semibold text-sm mb-6">{email}</p>
+            <p className="text-center font-semibold text-sm mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s', opacity: 0 }}>{email}</p>
 
-            {/* Demo mode banner */}
+            {/* Demo mode banner — collapsible, does NOT auto-fill */}
             {demoCode && (
-              <div className="mb-6 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 text-xs font-medium mb-1">
+              <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 animate-fade-in-up" style={{ animationDelay: '0.15s', opacity: 0 }}>
+                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 text-xs font-medium mb-2">
                   <Sparkles className="size-3.5" />
                   DEMO MODE — no real email was sent
                 </div>
-                <p className="text-amber-700 dark:text-amber-400 text-xs">
-                  Your verification code is <span className="font-mono font-bold text-base tracking-widest">{demoCode}</span>. Auto-filling…
-                </p>
+                {showDemoCode ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-amber-700 dark:text-amber-400 text-xs mb-1">Your verification code:</p>
+                      <code className="font-mono font-bold text-2xl tracking-widest text-amber-900 dark:text-amber-200">{demoCode}</code>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" className="size-8 p-0 text-amber-700 dark:text-amber-400" onClick={copyDemoCode}>
+                        {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-amber-700 dark:text-amber-400 text-xs" onClick={fillDemoCode}>
+                        Fill code
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:border-amber-700" onClick={() => setShowDemoCode(true)}>
+                    <Eye className="size-3.5 mr-1" /> Reveal demo code
+                  </Button>
+                )}
               </div>
             )}
 
             {/* 6-digit input */}
-            <div className="flex justify-center gap-2 mb-2" onPaste={handlePaste}>
+            <div className="flex justify-center gap-2 mb-2 animate-fade-in-up" style={{ animationDelay: '0.2s', opacity: 0 }} onPaste={handlePaste}>
               {digits.map((digit, i) => (
                 <input
                   key={i}
@@ -217,18 +235,18 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
                   disabled={verifying}
                   className={`size-12 sm:size-14 text-center text-2xl font-bold rounded-xl border-2 transition-all ${
                     error
-                      ? 'border-rose-400 bg-rose-50 dark:bg-rose-950/20'
+                      ? 'border-rose-400 bg-rose-50 dark:bg-rose-950/20 animate-shake'
                       : digit
-                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
-                      : 'border-input bg-background hover:border-emerald-300'
-                  } focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500`}
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 scale-105'
+                      : 'border-input bg-background hover:border-emerald-300 focus:border-emerald-500'
+                  } focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}
                   aria-label={`Digit ${i + 1}`}
                 />
               ))}
             </div>
 
             {error && (
-              <div className="flex items-center justify-center gap-1.5 text-rose-600 dark:text-rose-400 text-sm mt-3">
+              <div className="flex items-center justify-center gap-1.5 text-rose-600 dark:text-rose-400 text-sm mt-3 animate-fade-in">
                 <AlertCircle className="size-4" />
                 <span>{error}</span>
               </div>
@@ -238,7 +256,8 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
             <Button
               onClick={() => submitCode(digits.join(''))}
               disabled={verifying || digits.some(d => !d)}
-              className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 h-11 text-base"
+              className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 h-11 text-base transition-all hover:scale-[1.01] animate-fade-in-up"
+              style={{ animationDelay: '0.25s', opacity: 0 }}
             >
               {verifying ? (
                 <>
@@ -251,12 +270,12 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
             </Button>
 
             {/* Resend */}
-            <div className="text-center mt-5 text-sm">
+            <div className="text-center mt-5 text-sm animate-fade-in" style={{ animationDelay: '0.3s', opacity: 0 }}>
               <span className="text-muted-foreground">Didn&apos;t receive a code? </span>
               <button
                 onClick={handleResend}
                 disabled={cooldown > 0 || resending}
-                className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {cooldown > 0 ? `Resend in ${cooldown}s` : resending ? 'Sending…' : 'Resend code'}
               </button>
@@ -264,7 +283,7 @@ export function VerifyEmailScreen({ email, name, userId, demoCode }: {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
+        <p className="text-center text-xs text-muted-foreground mt-6 animate-fade-in" style={{ animationDelay: '0.35s', opacity: 0 }}>
           Wrong email? <button onClick={() => window.location.reload()} className="text-emerald-600 hover:underline font-medium">Use a different email</button>
         </p>
       </div>

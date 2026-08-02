@@ -10,9 +10,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { HeartPulse, Stethoscope, Building2, ShieldCheck, Clock, Mail, Loader2 } from 'lucide-react'
+import { HeartPulse, Stethoscope, Building2, ShieldCheck, Clock, Mail, Loader2, Eye, EyeOff, CheckCircle2, Sparkles, Zap } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { VerifyEmailScreen } from './verify-email-screen'
+
+const SPECIALTIES = [
+  'Emergency Medicine', 'Internal Medicine', 'Cardiology', 'ICU Nursing',
+  'Pediatric Nursing', 'Anesthesiology', 'Family Medicine', 'Diagnostic Radiology',
+  'Obstetrics & Gynecology', 'Physiotherapy', 'Pharmacy', 'Geriatrics',
+  'Psychology', 'Surgery', 'Orthopaedics', 'Psychiatry',
+  'Dentistry', 'Optometry', 'Midwifery', 'General Nursing',
+  'Public Health', 'Nutrition & Dietetics', 'Medical Laboratory Science',
+  'Radiography', 'Occupational Therapy', 'Speech Therapy',
+  'Biomedical Engineering', 'Health Administration',
+  'Other',
+]
 
 // Google "G" logo SVG (official colors)
 function GoogleIcon({ className }: { className?: string }) {
@@ -32,21 +44,26 @@ export function AuthScreen() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [googleLoading, setGoogleLoading] = useState<'staff' | 'admin' | null>(null)
 
-  // Verification state — when set, show the verify-email screen instead
+  // Verification state
   const [pendingVerification, setPendingVerification] = useState<{ email: string; name: string; userId: string; demoCode?: string } | null>(null)
 
   // Login form
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   // Signup form
   const [suName, setSuName] = useState('')
   const [suEmail, setSuEmail] = useState('')
   const [suPassword, setSuPassword] = useState('')
+  const [suPasswordConfirm, setSuPasswordConfirm] = useState('')
+  const [showSuPassword, setShowSuPassword] = useState(false)
+  const [showSuPasswordConfirm, setShowSuPasswordConfirm] = useState(false)
   const [suRole, setSuRole] = useState<'staff' | 'hospital_admin'>('staff')
   const [suHospitalName, setSuHospitalName] = useState('')
   const [suHospitalAddress, setSuHospitalAddress] = useState('')
   const [suSpecialty, setSuSpecialty] = useState('')
+  const [suSpecialtyOther, setSuSpecialtyOther] = useState('')
   const [suExperience, setSuExperience] = useState('')
   const [suLocation, setSuLocation] = useState('')
 
@@ -68,6 +85,19 @@ export function AuthScreen() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
+    // Validate password confirmation
+    if (suPassword !== suPasswordConfirm) {
+      toast({ variant: 'destructive', title: 'Passwords do not match', description: 'Please make sure both passwords are identical.' })
+      return
+    }
+    if (suPassword.length < 6) {
+      toast({ variant: 'destructive', title: 'Password too short', description: 'Password must be at least 6 characters.' })
+      return
+    }
+    if (suSpecialty === 'Other' && !suSpecialtyOther.trim()) {
+      toast({ variant: 'destructive', title: 'Specialty required', description: 'Please specify your specialty.' })
+      return
+    }
     try {
       const res: any = await api('/api/auth/signup', {
         method: 'POST',
@@ -76,6 +106,7 @@ export function AuthScreen() {
           hospitalName: suRole === 'hospital_admin' ? suHospitalName : undefined,
           hospitalAddress: suRole === 'hospital_admin' ? suHospitalAddress : undefined,
           specialty: suRole === 'staff' ? suSpecialty : undefined,
+          specialtyOther: suRole === 'staff' && suSpecialty === 'Other' ? suSpecialtyOther : undefined,
           experienceYears: suRole === 'staff' ? suExperience : undefined,
           location: suRole === 'staff' ? suLocation : undefined,
         }),
@@ -92,9 +123,6 @@ export function AuthScreen() {
   async function handleGoogleLogin(role: 'staff' | 'admin') {
     setGoogleLoading(role === 'staff' ? 'staff' : 'admin')
     try {
-      // In production with real Google OAuth, this would redirect to:
-      //   window.location.href = '/api/auth/signin/google'
-      // For sandbox demo, we call the demo endpoint directly
       const res: any = await api('/api/auth/google-demo', {
         method: 'POST',
         body: JSON.stringify({ role: role === 'staff' ? 'staff' : 'hospital_admin' }),
@@ -114,7 +142,6 @@ export function AuthScreen() {
     setMode('login')
   }
 
-  // If pending verification, show the verify-email screen
   if (pendingVerification) {
     return (
       <VerifyEmailScreen
@@ -128,36 +155,38 @@ export function AuthScreen() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left: brand/marketing panel */}
+      {/* Left: brand/marketing panel with animated background */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 text-white p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        {/* Animated shimmer overlay */}
+        <div className="absolute inset-0 shimmer pointer-events-none" />
         <div className="relative">
-          <div className="flex items-center gap-2 mb-12">
-            <div className="size-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
+          <div className="flex items-center gap-2 mb-12 animate-fade-in-up">
+            <div className="size-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center animate-float">
               <HeartPulse className="size-6" />
             </div>
             <span className="text-2xl font-semibold tracking-tight">ShiftGrid</span>
           </div>
-          <h1 className="text-4xl font-bold leading-tight mb-4">
+          <h1 className="text-4xl font-bold leading-tight mb-4 animate-fade-in-up" style={{ animationDelay: '0.1s', opacity: 0 }}>
             The marketplace connecting<br />hospitals with healthcare<br />professionals.
           </h1>
-          <p className="text-white/80 text-lg max-w-md">
+          <p className="text-white/80 text-lg max-w-md animate-fade-in-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
             Post locum shifts and permanent roles. Browse, filter, apply, and track — all in one place.
           </p>
         </div>
         <div className="relative grid grid-cols-2 gap-4 mt-12">
-          <FeatureCard icon={<Building2 className="size-5" />} title="Multi-hospital" body="One marketplace, many hospitals" />
-          <FeatureCard icon={<Stethoscope className="size-5" />} title="Locum & permanent" body="Same search, same pipeline" />
-          <FeatureCard icon={<ShieldCheck className="size-5" />} title="Email verified" body="Trusted, secure accounts" />
-          <FeatureCard icon={<Clock className="size-5" />} title="Urgent shifts" body="Fill ASAP openings fast" />
+          <FeatureCard icon={<Building2 className="size-5" />} title="Multi-hospital" body="One marketplace, many hospitals" delay="0.3s" />
+          <FeatureCard icon={<Stethoscope className="size-5" />} title="Locum & permanent" body="Same search, same pipeline" delay="0.35s" />
+          <FeatureCard icon={<ShieldCheck className="size-5" />} title="Email verified" body="Trusted, secure accounts" delay="0.4s" />
+          <FeatureCard icon={<Clock className="size-5" />} title="Urgent shifts" body="Fill ASAP openings fast" delay="0.45s" />
         </div>
       </div>
 
       {/* Right: auth form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-background">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-            <div className="size-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white">
+          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center animate-fade-in">
+            <div className="size-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white animate-float">
               <HeartPulse className="size-6" />
             </div>
             <span className="text-2xl font-semibold">ShiftGrid</span>
@@ -171,17 +200,16 @@ export function AuthScreen() {
 
             {/* ────────────── LOGIN ────────────── */}
             <TabsContent value="login">
-              <Card>
+              <Card className="animate-scale-in">
                 <CardHeader>
                   <CardTitle>Welcome back</CardTitle>
                   <CardDescription>Sign in to your ShiftGrid account.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Google button */}
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full h-11 mb-3 border-2 hover:bg-muted/50 font-medium"
+                    className="w-full h-11 mb-3 border-2 hover:bg-muted/50 font-medium transition-all hover:scale-[1.01]"
                     onClick={() => handleGoogleLogin('staff')}
                     disabled={googleLoading !== null}
                   >
@@ -205,13 +233,34 @@ export function AuthScreen() {
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" className="pl-9" />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password">Password</Label>
-                      <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          placeholder="••••••••"
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </button>
+                      </div>
                     </div>
-                    <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-11">Sign in</Button>
+                    <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 transition-all hover:scale-[1.01]">Sign in</Button>
                   </form>
 
                   <div className="mt-6 pt-6 border-t">
@@ -231,17 +280,16 @@ export function AuthScreen() {
 
             {/* ────────────── SIGNUP ────────────── */}
             <TabsContent value="signup">
-              <Card>
+              <Card className="animate-scale-in">
                 <CardHeader>
                   <CardTitle>Create your account</CardTitle>
                   <CardDescription>Join ShiftGrid as a healthcare professional or hospital.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Google button */}
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full h-11 mb-3 border-2 hover:bg-muted/50 font-medium"
+                    className="w-full h-11 mb-3 border-2 hover:bg-muted/50 font-medium transition-all hover:scale-[1.01]"
                     onClick={() => handleGoogleLogin(suRole === 'staff' ? 'staff' : 'admin')}
                     disabled={googleLoading !== null}
                   >
@@ -284,9 +332,56 @@ export function AuthScreen() {
                         <Input id="suEmail" type="email" value={suEmail} onChange={(e) => setSuEmail(e.target.value)} required className="pl-9" />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="suPassword">Password</Label>
-                      <Input id="suPassword" type="password" value={suPassword} onChange={(e) => setSuPassword(e.target.value)} required minLength={6} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="suPassword">Password</Label>
+                        <div className="relative">
+                          <Input
+                            id="suPassword"
+                            type={showSuPassword ? 'text' : 'password'}
+                            value={suPassword}
+                            onChange={(e) => setSuPassword(e.target.value)}
+                            required
+                            minLength={6}
+                            placeholder="Min 6 characters"
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSuPassword(!showSuPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            aria-label={showSuPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showSuPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="suPasswordConfirm">Confirm password</Label>
+                        <div className="relative">
+                          <Input
+                            id="suPasswordConfirm"
+                            type={showSuPasswordConfirm ? 'text' : 'password'}
+                            value={suPasswordConfirm}
+                            onChange={(e) => setSuPasswordConfirm(e.target.value)}
+                            required
+                            minLength={6}
+                            placeholder="Repeat password"
+                            className={`pr-10 ${suPasswordConfirm && suPassword !== suPasswordConfirm ? 'border-rose-400 focus-visible:ring-rose-400' : ''} ${suPasswordConfirm && suPassword === suPasswordConfirm ? 'border-emerald-400 focus-visible:ring-emerald-400' : ''}`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSuPasswordConfirm(!showSuPasswordConfirm)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            aria-label={showSuPasswordConfirm ? 'Hide password' : 'Show password'}
+                          >
+                            {showSuPasswordConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                          </button>
+                          {suPasswordConfirm && suPassword === suPasswordConfirm && (
+                            <CheckCircle2 className="absolute right-9 top-1/2 -translate-y-1/2 size-4 text-emerald-500" />
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     {suRole === 'hospital_admin' ? (
@@ -302,31 +397,50 @@ export function AuthScreen() {
                       </>
                     ) : (
                       <>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label htmlFor="suSpec">Specialty / Role</Label>
-                            <Input id="suSpec" value={suSpecialty} onChange={(e) => setSuSpecialty(e.target.value)} placeholder="e.g. Emergency Medicine" />
+                            <Select value={suSpecialty} onValueChange={setSuSpecialty}>
+                              <SelectTrigger id="suSpec"><SelectValue placeholder="Select specialty" /></SelectTrigger>
+                              <SelectContent className="max-h-72">
+                                {SPECIALTIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="suExp">Years of experience</Label>
                             <Input id="suExp" type="number" min={0} value={suExperience} onChange={(e) => setSuExperience(e.target.value)} />
                           </div>
                         </div>
+                        {suSpecialty === 'Other' && (
+                          <div className="space-y-2 animate-fade-in-up">
+                            <Label htmlFor="suSpecOther">Please specify your specialty</Label>
+                            <Input
+                              id="suSpecOther"
+                              value={suSpecialtyOther}
+                              onChange={(e) => setSuSpecialtyOther(e.target.value)}
+                              placeholder="e.g. Nuclear Medicine"
+                              required
+                            />
+                          </div>
+                        )}
                         <div className="space-y-2">
                           <Label htmlFor="suLoc">Location</Label>
-                          <Input id="suLoc" value={suLocation} onChange={(e) => setSuLocation(e.target.value)} placeholder="City, Province" />
+                          <Input id="suLoc" value={suLocation} onChange={(e) => setSuLocation(e.target.value)} placeholder="City, Region" />
                         </div>
                       </>
                     )}
 
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 animate-fade-in">
                       <Mail className="size-4 text-emerald-600 shrink-0 mt-0.5" />
                       <p className="text-xs text-emerald-800 dark:text-emerald-300">
                         We&apos;ll send a 6-digit verification code to your email to confirm your account.
                       </p>
                     </div>
 
-                    <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-11">Create account</Button>
+                    <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 transition-all hover:scale-[1.01]">
+                      <Sparkles className="size-4 mr-1" /> Create account
+                    </Button>
                   </form>
                 </CardContent>
               </Card>
@@ -338,9 +452,9 @@ export function AuthScreen() {
   )
 }
 
-function FeatureCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+function FeatureCard({ icon, title, body, delay }: { icon: React.ReactNode; title: string; body: string; delay: string }) {
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/15">
+    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/15 animate-fade-in-up card-hover-lift" style={{ animationDelay: delay, opacity: 0 }}>
       <div className="flex items-center gap-2 mb-1">
         <div className="text-white/90">{icon}</div>
         <span className="font-medium text-sm">{title}</span>
