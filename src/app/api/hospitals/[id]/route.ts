@@ -24,7 +24,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
   const body = await req.json()
-  const { name, description, address, logoUrl } = body
+  const { name, description, address, logoUrl, bannerUrl } = body
   const hospital = await db.hospital.update({
     where: { id },
     data: {
@@ -32,6 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       description: description ?? undefined,
       address: address ?? undefined,
       logoUrl: logoUrl ?? undefined,
+      bannerUrl: bannerUrl ?? undefined,
     },
   })
   return NextResponse.json({ hospital })

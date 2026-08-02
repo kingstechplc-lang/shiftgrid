@@ -150,27 +150,27 @@ export function AuthScreen() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row animate-in fade-in duration-500">
-      {/* Left: brand/marketing panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 text-white p-12 flex-col justify-between relative overflow-hidden">
+      {/* Left: brand/marketing panel — visible on all devices */}
+      <div className="flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 text-white p-8 lg:p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         {/* Animated gradient orbs */}
         <div className="absolute top-20 left-20 size-64 rounded-full bg-white/10 blur-3xl animate-pulse" />
         <div className="absolute bottom-20 right-20 size-80 rounded-full bg-teal-300/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-12 animate-in slide-in-from-left duration-700">
+          <div className="flex items-center gap-2 mb-8 lg:mb-12 animate-in slide-in-from-left duration-700">
             <div className="size-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
               <HeartPulse className="size-6" />
             </div>
             <span className="text-2xl font-semibold tracking-tight">ShiftGrid</span>
           </div>
-          <h1 className="text-4xl font-bold leading-tight mb-4 animate-in slide-in-from-left duration-700 delay-100">
+          <h1 className="text-3xl lg:text-4xl font-bold leading-tight mb-4 animate-in slide-in-from-left duration-700 delay-100">
             The marketplace connecting<br />hospitals with healthcare<br />professionals.
           </h1>
-          <p className="text-white/80 text-lg max-w-md animate-in slide-in-from-left duration-700 delay-200">
+          <p className="text-white/80 text-base lg:text-lg max-w-md animate-in slide-in-from-left duration-700 delay-200">
             Post locum shifts and permanent roles. Browse, filter, apply, and track — all in one place.
           </p>
         </div>
-        <div className="relative z-10 grid grid-cols-2 gap-4 mt-12 animate-in slide-in-from-bottom duration-700 delay-300">
+        <div className="relative z-10 grid grid-cols-2 gap-3 lg:gap-4 mt-8 lg:mt-12 animate-in slide-in-from-bottom duration-700 delay-300">
           <FeatureCard icon={<Building2 className="size-5" />} title="Multi-hospital" body="One marketplace, many hospitals" />
           <FeatureCard icon={<Stethoscope className="size-5" />} title="Locum & permanent" body="Same search, same pipeline" />
           <FeatureCard icon={<ShieldCheck className="size-5" />} title="Email verified" body="Trusted, secure accounts" />
@@ -181,12 +181,6 @@ export function AuthScreen() {
       {/* Right: auth form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-background">
         <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-            <div className="size-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white">
-              <HeartPulse className="size-6" />
-            </div>
-            <span className="text-2xl font-semibold">ShiftGrid</span>
-          </div>
 
           <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
             <TabsList className="grid w-full grid-cols-2 mb-6">

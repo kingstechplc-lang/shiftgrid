@@ -46,6 +46,8 @@ export async function GET(req: NextRequest) {
             id: true, email: true, name: true, role: true,
             specialty: true, experienceYears: true, location: true,
             availability: true, bio: true, preferredTypes: true, resumeUrl: true,
+            profilePhoto: true, phoneNumber: true, region: true, district: true,
+            townCity: true, streetAddress: true, gender: true,
             credentials: true,
           },
         },

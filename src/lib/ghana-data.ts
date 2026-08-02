@@ -164,6 +164,8 @@ export const SPECIALTIES = [
   'ENT (Otolaryngology)',
   'Ophthalmology',
   'Dentistry',
+  'Physician Assistant-Medical',
+  'Physician Assistant-Dental',
   'Radiography',
   'Medical Laboratory Science',
   'Nutrition & Dietetics',
@@ -173,4 +175,18 @@ export const SPECIALTIES = [
   'Community Health',
   'Health Administration',
   'Other',
+] as const
+
+// Availability options for the staff profile dropdown
+export const AVAILABILITY_OPTIONS = [
+  'Full-time',
+  'Part-time',
+  'Weekends only',
+  'Evenings only',
+  'Night shifts',
+  'Flexible',
+  'Locum only',
+  'On-call',
+  'Block scheduling (7 on / 7 off)',
+  'Not available',
 ] as const

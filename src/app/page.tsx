@@ -21,6 +21,8 @@ import { AdminOfferDetail } from '@/components/shiftgrid/admin-offer-detail'
 import { CandidateProfile } from '@/components/shiftgrid/candidate-profile'
 import { HospitalSettings } from '@/components/shiftgrid/hospital-settings'
 import { TeamManagement } from '@/components/shiftgrid/team-management'
+import { SettingsView } from '@/components/shiftgrid/settings'
+import { SuperAdminDashboard, SuperHospitals, SuperUsers, SuperOffers } from '@/components/shiftgrid/super-admin'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Home() {
@@ -56,6 +58,22 @@ export default function Home() {
 }
 
 function ViewRouter({ view, user, selectedOfferId, selectedApplicationId }: { view: string; user: SafeUser; selectedOfferId: string | null; selectedApplicationId: string | null }) {
+  // Settings is shared across all roles
+  if (view === 'settings') return <SettingsView />
+
+  // Super admin views
+  if (user.role === 'super_admin') {
+    switch (view) {
+      case 'super-dashboard': return <SuperAdminDashboard />
+      case 'super-hospitals': return <SuperHospitals />
+      case 'super-users': return <SuperUsers />
+      case 'super-offers': return <SuperOffers />
+      case 'messages': return <Messages />
+      case 'notifications': return <Notifications />
+      default: return <SuperAdminDashboard />
+    }
+  }
+
   // Staff views
   if (user.role === 'staff') {
     switch (view) {
@@ -73,7 +91,7 @@ function ViewRouter({ view, user, selectedOfferId, selectedApplicationId }: { vi
   }
 
   // Admin views
-  if (user.role === 'hospital_admin' || user.role === 'super_admin') {
+  if (user.role === 'hospital_admin') {
     switch (view) {
       case 'dashboard': return <AdminDashboard />
       case 'offers': return <AdminOffersList />

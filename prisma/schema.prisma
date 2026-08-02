@@ -15,6 +15,7 @@ model Hospital {
   name        String
   description String?
   logoUrl     String?
+  bannerUrl   String?
   address     String?
   verified    Boolean  @default(false)
   createdAt   DateTime @default(now())

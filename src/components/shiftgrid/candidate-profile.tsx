@@ -55,14 +55,18 @@ export function CandidateProfile({ applicationId }: { applicationId: string }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Header */}
-          <Card>
+          <Card className="border-2">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <Avatar className="size-16">
-                  <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xl font-semibold">
-                    {user.name.split(' ').map((p: string) => p[0]).slice(0, 2).join('').toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                {user.profilePhoto ? (
+                  <img src={user.profilePhoto} alt={user.name} className="size-16 rounded-full object-cover border-4 border-emerald-100 dark:border-emerald-950" />
+                ) : (
+                  <Avatar className="size-16">
+                    <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xl font-semibold">
+                      {user.name.split(' ').map((p: string) => p[0]).slice(0, 2).join('').toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
                 <div className="flex-1 min-w-0">
                   <h1 className="text-xl lg:text-2xl font-bold">{user.name}</h1>
                   <div className="text-sm text-muted-foreground mt-1 space-y-1">

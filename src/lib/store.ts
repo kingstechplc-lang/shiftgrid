@@ -22,6 +22,11 @@ export type View =
   | 'hospital'
   | 'team'
   | 'settings'
+  // Super admin views
+  | 'super-dashboard'
+  | 'super-hospitals'
+  | 'super-users'
+  | 'super-offers'
 
 type AppState = {
   user: SafeUser | null

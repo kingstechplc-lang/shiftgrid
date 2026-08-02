@@ -6,10 +6,11 @@ import { useApp } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { ThemeToggle } from '@/components/theme-toggle'
 import {
   HeartPulse, LayoutDashboard, Briefcase, Inbox, Bookmark,
-  User, MessageSquare, Bell, Building2, Users,
-  LogOut, Menu, FileText, Search,
+  User, MessageSquare, Bell, Building2, Users, Settings,
+  LogOut, Menu, FileText, Search, ShieldCheck, Stethoscope, Globe,
 } from 'lucide-react'
 import type { View } from '@/lib/store'
 import type { SafeUser } from '@/lib/types'
@@ -25,6 +26,7 @@ const STAFF_NAV: NavItem[] = [
   { view: 'profile', label: 'Profile', icon: <User className="size-4" /> },
   { view: 'credentials', label: 'Credentials', icon: <FileText className="size-4" /> },
   { view: 'notifications', label: 'Notifications', icon: <Bell className="size-4" /> },
+  { view: 'settings', label: 'Settings', icon: <Settings className="size-4" /> },
 ]
 
 const ADMIN_NAV: NavItem[] = [
@@ -34,6 +36,17 @@ const ADMIN_NAV: NavItem[] = [
   { view: 'hospital', label: 'Hospital settings', icon: <Building2 className="size-4" /> },
   { view: 'team', label: 'Team', icon: <Users className="size-4" /> },
   { view: 'notifications', label: 'Notifications', icon: <Bell className="size-4" /> },
+  { view: 'settings', label: 'Settings', icon: <Settings className="size-4" /> },
+]
+
+const SUPER_ADMIN_NAV: NavItem[] = [
+  { view: 'super-dashboard', label: 'Platform Overview', icon: <ShieldCheck className="size-4" /> },
+  { view: 'super-hospitals', label: 'Hospitals', icon: <Building2 className="size-4" /> },
+  { view: 'super-users', label: 'Users', icon: <Users className="size-4" /> },
+  { view: 'super-offers', label: 'All Offers', icon: <Briefcase className="size-4" /> },
+  { view: 'messages', label: 'Messages', icon: <MessageSquare className="size-4" /> },
+  { view: 'notifications', label: 'Notifications', icon: <Bell className="size-4" /> },
+  { view: 'settings', label: 'Settings', icon: <Settings className="size-4" /> },
 ]
 
 export function AppShell({ user, children }: { user: SafeUser; children: React.ReactNode }) {
@@ -42,13 +55,12 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
   const [unreadMsgs, setUnreadMsgs] = useState(0)
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const nav = user.role === 'staff' ? STAFF_NAV : ADMIN_NAV
+  const nav = user.role === 'super_admin' ? SUPER_ADMIN_NAV : user.role === 'staff' ? STAFF_NAV : ADMIN_NAV
 
   useEffect(() => {
     let cancelled = false
     const run = async () => {
       try {
-        // Single lightweight call instead of fetching full messages + notifications lists
         const r = await api<{ unreadMessages: number; unreadNotifications: number }>('/api/unread-counts')
         if (cancelled) return
         setUnreadNotifs(r.unreadNotifications || 0)
@@ -56,7 +68,6 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
       } catch {}
     }
     run()
-    // Poll every 60s (was 30s) — Neon cold starts make frequent polling expensive
     const i = setInterval(run, 60000)
     return () => { cancelled = true; clearInterval(i) }
   }, [user.id])
@@ -79,7 +90,7 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
         <div>
           <div className="font-semibold leading-none">ShiftGrid</div>
           <div className="text-xs text-muted-foreground mt-0.5">
-            {user.role === 'staff' ? 'Healthcare professional' : 'Hospital admin'}
+            {user.role === 'super_admin' ? 'Super Admin' : user.role === 'staff' ? 'Healthcare professional' : 'Hospital admin'}
           </div>
         </div>
       </div>
@@ -110,15 +121,20 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
 
       <div className="p-3 border-t">
         <div className="flex items-center gap-3 px-2 py-2">
-          <Avatar className="size-9">
-            <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-semibold">
-              {initials(user.name)}
-            </AvatarFallback>
-          </Avatar>
+          {user.profilePhoto ? (
+            <img src={user.profilePhoto} alt="" className="size-9 rounded-full object-cover" />
+          ) : (
+            <Avatar className="size-9">
+              <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                {initials(user.name)}
+              </AvatarFallback>
+            </Avatar>
+          )}
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">{user.name}</div>
             <div className="text-xs text-muted-foreground truncate">{user.email}</div>
           </div>
+          <ThemeToggle />
         </div>
         <Button variant="ghost" size="sm" className="w-full justify-start mt-1 text-muted-foreground" onClick={handleLogout}>
           <LogOut className="size-4 mr-2" /> Sign out
@@ -153,6 +169,7 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
             </div>
             <span className="font-semibold">ShiftGrid</span>
           </div>
+          <ThemeToggle />
           <Button variant="ghost" size="icon" onClick={() => setView('notifications')} className="relative">
             <Bell className="size-5" />
             {unreadNotifs > 0 && <span className="absolute top-1 right-1 size-2 bg-rose-500 rounded-full" />}

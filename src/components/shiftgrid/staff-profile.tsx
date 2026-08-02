@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Building2, MapPin, Save, Briefcase, Calendar, User, Phone, Camera, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { GHANA_REGIONS, getDistrictsForRegion, validateGhanaPhone, validateDigitalAddress, SPECIALTIES } from '@/lib/ghana-data'
+import { GHANA_REGIONS, getDistrictsForRegion, validateGhanaPhone, validateDigitalAddress, SPECIALTIES, AVAILABILITY_OPTIONS } from '@/lib/ghana-data'
 
 export function StaffProfile() {
   const { user, setUser } = useApp()
@@ -295,7 +295,12 @@ export function StaffProfile() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="avail"><Calendar className="size-3 inline mr-1" /> Availability</Label>
-                <Input id="avail" value={form.availability} onChange={(e) => set('availability', e.target.value)} placeholder="e.g. Weekends, evenings" />
+                <Select value={form.availability || '__none__'} onValueChange={(v) => set('availability', v === '__none__' ? '' : v)}>
+                  <SelectTrigger id="avail"><SelectValue placeholder="Select availability" /></SelectTrigger>
+                  <SelectContent>
+                    {AVAILABILITY_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
