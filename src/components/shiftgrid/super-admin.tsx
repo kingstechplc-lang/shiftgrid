@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Building2, Users, Briefcase, Inbox, ShieldCheck, Clock, TrendingUp, Search, CheckCircle2, XCircle, Ban, PauseCircle, PlayCircle, Eye, Trash2, Loader2 } from 'lucide-react'
+import { Building2, Users, Briefcase, Inbox, ShieldCheck, Clock, TrendingUp, Search, CheckCircle2, XCircle, Ban, PauseCircle, PlayCircle, Eye, Trash2, Loader2, Globe } from 'lucide-react'
 import { formatDate, timeAgo } from '@/lib/types'
 import { useToast } from '@/hooks/use-toast'
 
@@ -110,11 +110,7 @@ export function SuperAdminDashboard() {
                       <div className="text-xs text-muted-foreground truncate">{h.address || 'No address'} · {h._count.offers} offers · {h._count.members} admins</div>
                     </div>
                   </div>
-                  {h.verified ? (
-                    <Badge variant="outline" className="border-emerald-300 text-emerald-700 text-[10px]"><CheckCircle2 className="size-3 mr-1" /> Verified</Badge>
-                  ) : (
-                    <Badge variant="outline" className="border-amber-400 text-amber-700 text-[10px]"><Clock className="size-3 mr-1" /> Pending</Badge>
-                  )}
+                  <StatusBadges status={h.status} verified={h.verified} />
                 </div>
               ))}
             </div>
@@ -141,6 +137,7 @@ export function SuperAdminDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {u.registrationId && <Badge variant="outline" className="text-[10px] font-mono">{u.registrationId}</Badge>}
                     <Badge variant="outline" className="text-[10px] capitalize">{u.role.replace('_', ' ')}</Badge>
                     <span className="text-xs text-muted-foreground">{timeAgo(u.createdAt)}</span>
                   </div>
@@ -175,8 +172,32 @@ function SuperStatCard({ icon, label, value, sub, accent }: { icon: React.ReactN
   )
 }
 
+// Status badges component — shows banned/suspended/verified prominently
+function StatusBadges({ status, verified }: { status: string; verified?: boolean }) {
+  return (
+    <div className="flex items-center gap-1 shrink-0">
+      {status === 'banned' && (
+        <Badge className="bg-rose-100 text-rose-700 border border-rose-300 text-[10px] font-semibold">
+          <Ban className="size-3 mr-1" /> BANNED
+        </Badge>
+      )}
+      {status === 'suspended' && (
+        <Badge className="bg-amber-100 text-amber-700 border border-amber-300 text-[10px] font-semibold">
+          <PauseCircle className="size-3 mr-1" /> SUSPENDED
+        </Badge>
+      )}
+      {verified === true && (
+        <Badge variant="outline" className="border-emerald-300 text-emerald-700 text-[10px]"><CheckCircle2 className="size-3 mr-1" /> Verified</Badge>
+      )}
+      {verified === false && (
+        <Badge variant="outline" className="border-amber-400 text-amber-700 text-[10px]"><Clock className="size-3 mr-1" /> Pending</Badge>
+      )}
+    </div>
+  )
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Super Admin — Hospitals management (with preview + ban/suspend)
+// Super Admin — Hospitals management (with filters + preview + ban/suspend)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function SuperHospitals() {
@@ -189,10 +210,15 @@ export function SuperHospitals() {
   const [deleteTarget, setDeleteTarget] = useState<any>(null)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('')
+  const [verifiedFilter, setVerifiedFilter] = useState('')
 
   useEffect(() => {
-    api<{ items: any[] }>('/api/super/hospitals').then(r => setItems(r.items)).finally(() => setLoading(false))
-  }, [refreshKey])
+    const params = new URLSearchParams()
+    if (statusFilter) params.set('status', statusFilter)
+    if (verifiedFilter) params.set('verified', verifiedFilter)
+    api<{ items: any[] }>(`/api/super/hospitals?${params}`).then(r => setItems(r.items)).finally(() => setLoading(false))
+  }, [refreshKey, statusFilter, verifiedFilter])
 
   async function toggleVerify(h: any) {
     try {
@@ -251,9 +277,25 @@ export function SuperHospitals() {
         <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">All Hospitals</h1>
         <p className="text-muted-foreground mt-1">{items.length} hospitals on the platform.</p>
       </div>
+
+      {/* Filters */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border rounded-lg px-3 text-sm">
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="suspended">Suspended</option>
+          <option value="banned">Banned</option>
+        </select>
+        <select value={verifiedFilter} onChange={(e) => setVerifiedFilter(e.target.value)} className="border rounded-lg px-3 text-sm">
+          <option value="">All (verified + unverified)</option>
+          <option value="true">Verified only</option>
+          <option value="false">Unverified only</option>
+        </select>
+      </div>
+
       <div className="space-y-3">
         {items.map(h => (
-          <Card key={h.id} className="border-2 hover:shadow-md transition-all">
+          <Card key={h.id} className={`border-2 hover:shadow-md transition-all ${h.status === 'banned' ? 'border-rose-300 bg-rose-50/30 dark:bg-rose-950/10' : h.status === 'suspended' ? 'border-amber-300 bg-amber-50/30 dark:bg-amber-950/10' : ''}`}>
             <CardContent className="p-4 flex items-center gap-4">
               {h.logoUrl ? (
                 <img src={h.logoUrl} alt="Hospital logo" className="size-14 rounded-xl object-cover" />
@@ -263,13 +305,7 @@ export function SuperHospitals() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium truncate">{h.name}</span>
-                  {h.verified ? (
-                    <Badge variant="outline" className="border-emerald-300 text-emerald-700 text-[10px]"><CheckCircle2 className="size-3 mr-1" /> Verified</Badge>
-                  ) : (
-                    <Badge variant="outline" className="border-amber-400 text-amber-700 text-[10px]"><Clock className="size-3 mr-1" /> Pending</Badge>
-                  )}
-                  {h.status === 'suspended' && <Badge variant="outline" className="border-amber-500 text-amber-600 text-[10px]">Suspended</Badge>}
-                  {h.status === 'banned' && <Badge variant="outline" className="border-rose-500 text-rose-600 text-[10px]">Banned</Badge>}
+                  <StatusBadges status={h.status} verified={h.verified} />
                 </div>
                 <div className="text-xs text-muted-foreground truncate">{h.address || 'No address'}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">{h._count.offers} offers · {h._count.members} admins · Joined {formatDate(h.createdAt)}</div>
@@ -307,7 +343,7 @@ export function SuperHospitals() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {previewHospital?.logoUrl && <img src={previewHospital.logoUrl} alt="" className="size-8 rounded-lg" />}
+              {previewHospital?.logoUrl && <img src={previewHospital.logoUrl} alt="Hospital logo" className="size-8 rounded-lg" />}
               {previewHospital?.name}
             </DialogTitle>
           </DialogHeader>
@@ -317,12 +353,12 @@ export function SuperHospitals() {
                 <img src={previewHospital.bannerUrl} alt="Hospital banner" className="w-full h-32 object-cover rounded-lg" />
               )}
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-muted-foreground">Status:</span> <Badge variant="outline" className="ml-1 capitalize">{previewHospital.status}</Badge></div>
+                <div><span className="text-muted-foreground">Status:</span> <StatusBadges status={previewHospital.status} /></div>
                 <div><span className="text-muted-foreground">Verified:</span> {previewHospital.verified ? '✅ Yes' : '⏳ Pending'}</div>
                 <div><span className="text-muted-foreground">Address:</span> {previewHospital.address || '—'}</div>
+                <div><span className="text-muted-foreground">Website:</span> {previewHospital.website ? <a href={previewHospital.website} target="_blank" rel="noopener" className="text-emerald-600 hover:underline">{previewHospital.website}</a> : '—'}</div>
                 <div><span className="text-muted-foreground">Joined:</span> {formatDate(previewHospital.createdAt)}</div>
                 <div><span className="text-muted-foreground">Offers:</span> {previewHospital._count?.offers ?? 0}</div>
-                <div><span className="text-muted-foreground">Admins:</span> {previewHospital._count?.members ?? 0}</div>
               </div>
               {previewHospital.description && (
                 <div>
@@ -336,10 +372,10 @@ export function SuperHospitals() {
                   <div className="space-y-2">
                     {previewHospital.members.map((m: any) => (
                       <div key={m.id} className="flex items-center gap-2 text-sm">
-                        {m.profilePhoto ? <img src={m.profilePhoto} alt="" className="size-7 rounded-full" /> : <Avatar className="size-7"><AvatarFallback className="text-xs">{m.name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>}
+                        {m.profilePhoto ? <img src={m.profilePhoto} alt={m.name} className="size-7 rounded-full" /> : <Avatar className="size-7"><AvatarFallback className="text-xs">{m.name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>}
                         <span className="font-medium">{m.name}</span>
                         <span className="text-muted-foreground text-xs">{m.email}</span>
-                        {m.status !== 'active' && <Badge variant="outline" className="text-[10px]">{m.status}</Badge>}
+                        <StatusBadges status={m.status} />
                       </div>
                     ))}
                   </div>
@@ -393,7 +429,7 @@ export function SuperHospitals() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Super Admin — Users management (with role change + ban/suspend)
+// Super Admin — Users management (with filters + role change + ban/suspend)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function SuperUsers() {
@@ -403,6 +439,7 @@ export function SuperUsers() {
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(1)
   const [manageUser, setManageUser] = useState<any>(null)
   const [newRole, setNewRole] = useState('')
@@ -416,8 +453,9 @@ export function SuperUsers() {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
     if (roleFilter) params.set('role', roleFilter)
+    if (statusFilter) params.set('status', statusFilter)
     api<{ items: any[] }>(`/api/super/users?${params}`).then(r => setItems(r.items)).finally(() => setLoading(false))
-  }, [refreshKey, q, roleFilter])
+  }, [refreshKey, q, roleFilter, statusFilter])
 
   async function changeStatus(u: any, status: 'active' | 'suspended' | 'banned') {
     try {
@@ -478,10 +516,10 @@ export function SuperUsers() {
         <p className="text-muted-foreground mt-1">{items.length} users on the platform.</p>
       </div>
 
-      <div className="flex gap-2 mb-4">
-        <div className="relative flex-1">
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input placeholder="Search by name or email..." value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} className="pl-9" />
+          <Input placeholder="Search by name, email, or registration ID..." value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} className="pl-9" />
         </div>
         <select value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1) }} className="border rounded-lg px-3 text-sm">
           <option value="">All roles</option>
@@ -489,11 +527,17 @@ export function SuperUsers() {
           <option value="hospital_admin">Hospital Admin</option>
           <option value="super_admin">Super Admin</option>
         </select>
+        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} className="border rounded-lg px-3 text-sm">
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="suspended">Suspended</option>
+          <option value="banned">Banned</option>
+        </select>
       </div>
 
       <div className="space-y-2">
         {paginatedItems.map(u => (
-          <Card key={u.id} className="border-2 hover:shadow-sm transition-all">
+          <Card key={u.id} className={`border-2 hover:shadow-sm transition-all ${u.status === 'banned' ? 'border-rose-300 bg-rose-50/30 dark:bg-rose-950/10' : u.status === 'suspended' ? 'border-amber-300 bg-amber-50/30 dark:bg-amber-950/10' : ''}`}>
             <CardContent className="p-3 flex items-center gap-3">
               {u.profilePhoto ? (
                 <img src={u.profilePhoto} alt={u.name} className="size-10 rounded-full object-cover" />
@@ -503,11 +547,10 @@ export function SuperUsers() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-sm truncate">{u.name}</span>
+                  <StatusBadges status={u.status} verified={!!u.emailVerified} />
+                  {u.registrationId && <Badge variant="outline" className="text-[10px] font-mono">{u.registrationId}</Badge>}
                   <Badge variant="outline" className="text-[10px] capitalize">{u.role.replace('_', ' ')}</Badge>
                   {u.authProvider === 'google' && <Badge variant="outline" className="text-[10px]">Google</Badge>}
-                  {u.status === 'suspended' && <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-600">Suspended</Badge>}
-                  {u.status === 'banned' && <Badge variant="outline" className="text-[10px] border-rose-500 text-rose-600">Banned</Badge>}
-                  {u.emailVerified ? <CheckCircle2 className="size-3 text-emerald-600" /> : <Clock className="size-3 text-amber-500" />}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">{u.email} · {u.hospital?.name || u.specialty || '—'}</div>
               </div>
@@ -536,7 +579,6 @@ export function SuperUsers() {
         ))}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-muted-foreground">
@@ -557,10 +599,11 @@ export function SuperUsers() {
           {manageUser && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
-                {manageUser.profilePhoto ? <img src={manageUser.profilePhoto} alt="" className="size-12 rounded-full" /> : <Avatar className="size-12"><AvatarFallback>{manageUser.name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>}
+                {manageUser.profilePhoto ? <img src={manageUser.profilePhoto} alt={manageUser.name} className="size-12 rounded-full" /> : <Avatar className="size-12"><AvatarFallback>{manageUser.name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>}
                 <div>
                   <div className="font-medium">{manageUser.name}</div>
                   <div className="text-xs text-muted-foreground">{manageUser.email}</div>
+                  {manageUser.registrationId && <div className="text-xs font-mono text-emerald-600">{manageUser.registrationId}</div>}
                 </div>
               </div>
               <div className="space-y-2">
@@ -573,12 +616,10 @@ export function SuperUsers() {
                     <SelectItem value="super_admin">Super Admin</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Promote or demote this user. Super admins have full platform access.</p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Reset Password (optional)</label>
                 <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter new password (min 6 chars)" minLength={6} />
-                <p className="text-xs text-muted-foreground">Leave blank to keep current password. New password will be securely hashed with PBKDF2.</p>
               </div>
             </div>
           )}
@@ -595,7 +636,7 @@ export function SuperUsers() {
           <DialogHeader><DialogTitle className="flex items-center gap-2 text-rose-600"><Trash2 className="size-5" /> Delete User</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <p className="text-sm">Are you absolutely sure you want to delete <strong>{deleteTarget?.name}</strong> ({deleteTarget?.email})?</p>
-            <p className="text-sm text-muted-foreground">This will permanently delete the user and all their applications, messages, and notifications. This action CANNOT be undone.</p>
+            <p className="text-sm text-muted-foreground">This will permanently delete the user and all their data. This action CANNOT be undone.</p>
             <label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border-2 border-rose-200 bg-rose-50 dark:bg-rose-950/20">
               <Checkbox checked={deleteConfirm} onCheckedChange={(v) => setDeleteConfirm(v === true)} />
               <span className="text-sm font-medium">I confirm I want to permanently delete this user.</span>
@@ -614,22 +655,52 @@ export function SuperUsers() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Super Admin — Offers management (with pagination)
+// Super Admin — Offers management (with ban/close/delete + search + pagination)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function SuperOffers() {
-  const { refreshKey } = useApp()
+  const { refreshKey, refresh } = useApp()
+  const { toast } = useToast()
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
+  const [q, setQ] = useState('')
   const [page, setPage] = useState(1)
+  const [deleteTarget, setDeleteTarget] = useState<any>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
   const PAGE_SIZE = 15
 
   useEffect(() => {
     const params = new URLSearchParams()
     if (statusFilter) params.set('status', statusFilter)
+    if (q) params.set('q', q)
     api<{ items: any[] }>(`/api/super/offers?${params}`).then(r => setItems(r.items)).finally(() => setLoading(false))
-  }, [refreshKey, statusFilter])
+  }, [refreshKey, statusFilter, q])
+
+  async function changeOfferStatus(o: any, status: 'closed' | 'draft' | 'published') {
+    try {
+      await api(`/api/super/offers/${o.id}`, { method: 'PATCH', body: JSON.stringify({ status }) })
+      setItems(prev => prev.map(x => x.id === o.id ? { ...x, status } : x))
+      toast({ title: `Offer ${status}`, description: o.title })
+      refresh()
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Failed', description: e.message })
+    }
+  }
+
+  async function handleDeleteOffer() {
+    if (!deleteTarget || !deleteConfirm) return
+    try {
+      await api(`/api/super/offers/${deleteTarget.id}?confirm=yes`, { method: 'DELETE' })
+      setItems(prev => prev.filter(x => x.id !== deleteTarget.id))
+      toast({ title: 'Offer deleted', description: deleteTarget.title })
+      setDeleteTarget(null)
+      setDeleteConfirm(false)
+      refresh()
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Delete failed', description: e.message })
+    }
+  }
 
   if (loading) return <div className="p-6"><Skeleton className="h-9 w-72 mb-4" /><Skeleton className="h-96" /></div>
 
@@ -643,19 +714,23 @@ export function SuperOffers() {
         <p className="text-muted-foreground mt-1">{items.length} offers across all hospitals.</p>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <div className="relative flex-1 min-w-48">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input placeholder="Search offers..." value={q} onChange={(e) => { setQ(e.target.value); setPage(1) }} className="pl-9" />
+        </div>
         <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} className="border rounded-lg px-3 text-sm">
           <option value="">All statuses</option>
           <option value="published">Published</option>
           <option value="draft">Draft</option>
           <option value="filled">Filled</option>
-          <option value="closed">Closed</option>
+          <option value="closed">Closed (banned)</option>
         </select>
       </div>
 
       <div className="space-y-2">
         {paginatedItems.map(o => (
-          <Card key={o.id} className="border-2 hover:shadow-sm transition-all">
+          <Card key={o.id} className={`border-2 hover:shadow-sm transition-all ${o.status === 'closed' ? 'border-rose-300 bg-rose-50/30 dark:bg-rose-950/10' : ''}`}>
             <CardContent className="p-3 flex items-center gap-3">
               {o.hospital?.logoUrl ? (
                 <img src={o.hospital.logoUrl} alt="Hospital logo" className="size-10 rounded-lg object-cover" />
@@ -667,9 +742,23 @@ export function SuperOffers() {
                   <span className="font-medium text-sm truncate">{o.title}</span>
                   {o.urgent && <Badge className="bg-rose-500 text-white text-[10px]">Urgent</Badge>}
                   <Badge variant="outline" className="text-[10px] capitalize">{o.type}</Badge>
-                  <Badge variant="outline" className={`text-[10px] ${o.status === 'published' ? 'border-emerald-300 text-emerald-700' : o.status === 'filled' ? 'border-teal-300 text-teal-700' : ''}`}>{o.status}</Badge>
+                  <Badge variant="outline" className={`text-[10px] ${o.status === 'published' ? 'border-emerald-300 text-emerald-700' : o.status === 'filled' ? 'border-teal-300 text-teal-700' : o.status === 'closed' ? 'border-rose-400 text-rose-600' : ''}`}>{o.status === 'closed' ? 'BANNED' : o.status}</Badge>
                 </div>
                 <div className="text-xs text-muted-foreground truncate">{o.hospital?.name} · {o.specialty || '—'} · {o._count.applications} applicants · {timeAgo(o.createdAt)}</div>
+              </div>
+              <div className="flex gap-1 shrink-0">
+                {o.status === 'closed' ? (
+                  <Button variant="ghost" size="sm" onClick={() => changeOfferStatus(o, 'published')} title="Restore (republish)">
+                    <PlayCircle className="size-4 text-emerald-600" />
+                  </Button>
+                ) : (
+                  <Button variant="ghost" size="sm" onClick={() => changeOfferStatus(o, 'closed')} title="Ban (close offer)">
+                    <Ban className="size-4 text-rose-600" />
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => { setDeleteTarget(o); setDeleteConfirm(false) }} title="Delete">
+                  <Trash2 className="size-4 text-rose-600" />
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -688,6 +777,27 @@ export function SuperOffers() {
           </div>
         </div>
       )}
+
+      {/* Delete Offer Dialog with checkbox */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeleteConfirm(false) } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="flex items-center gap-2 text-rose-600"><Trash2 className="size-5" /> Delete Offer</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm">Delete <strong>{deleteTarget?.title}</strong>?</p>
+            <p className="text-sm text-muted-foreground">This permanently removes the offer and all its applications. Cannot be undone.</p>
+            <label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border-2 border-rose-200 bg-rose-50 dark:bg-rose-950/20">
+              <Checkbox checked={deleteConfirm} onCheckedChange={(v) => setDeleteConfirm(v === true)} />
+              <span className="text-sm font-medium">I confirm I want to permanently delete this offer.</span>
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteConfirm(false) }}>Cancel</Button>
+            <Button variant="destructive" disabled={!deleteConfirm} onClick={handleDeleteOffer}>
+              <Trash2 className="size-4 mr-2" /> Delete permanently
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

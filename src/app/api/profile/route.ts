@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest) {
   const allowed: any = {}
 
   // Existing fields
-  const fields = ['name','resumeUrl','availability','bio','location']
+  const fields = ['name','resumeUrl','availability','bio','location','website']
   for (const f of fields) if (f in body) allowed[f] = body[f] ?? null
   if ('experienceYears' in body) allowed.experienceYears = body.experienceYears !== '' && body.experienceYears != null ? Number(body.experienceYears) : null
   if ('preferredTypes' in body) {

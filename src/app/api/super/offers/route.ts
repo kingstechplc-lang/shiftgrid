@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
+import { OfferStatus } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,9 +14,16 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
+  const q = searchParams.get('q')
 
   const where: any = {}
   if (status) where.status = status
+  if (q) {
+    where.OR = [
+      { title: { contains: q, mode: 'insensitive' } },
+      { specialty: { contains: q, mode: 'insensitive' } },
+    ]
+  }
 
   const offers = await db.offer.findMany({
     where,
@@ -26,7 +34,7 @@ export async function GET(req: NextRequest) {
       _count: { select: { applications: true } },
     },
     orderBy: { createdAt: 'desc' },
-    take: 100,
+    take: 200,
   })
 
   return NextResponse.json({ items: offers })

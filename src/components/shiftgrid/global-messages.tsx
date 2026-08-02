@@ -9,9 +9,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { Send, Globe, Users, User, Mail, Loader2, CheckCircle2 } from 'lucide-react'
+import { Send, Globe, Users, User, Mail, Loader2, CheckCircle2, Search, MessageSquare } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export function GlobalMessages() {
@@ -19,14 +19,25 @@ export function GlobalMessages() {
   const [sending, setSending] = useState(false)
   const [recipientType, setRecipientType] = useState<'all' | 'staff' | 'admins' | 'specific'>('all')
   const [specificUserId, setSpecificUserId] = useState('')
+  const [userSearch, setUserSearch] = useState('')
   const [users, setUsers] = useState<any[]>([])
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
+  const [allowReplies, setAllowReplies] = useState(true)
   const [lastSent, setLastSent] = useState<{ count: number } | null>(null)
 
   useEffect(() => {
     api<{ items: any[] }>('/api/super/users').then(r => setUsers(r.items)).catch(() => {})
   }, [])
+
+  // Filter users by search query
+  const filteredUsers = userSearch
+    ? users.filter(u =>
+        u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+        u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
+        (u.registrationId || '').toLowerCase().includes(userSearch.toLowerCase())
+      )
+    : users
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault()
@@ -47,6 +58,7 @@ export function GlobalMessages() {
           recipientId: recipientType === 'specific' ? specificUserId : undefined,
           subject,
           body,
+          allowReplies,
         }),
       })
       setLastSent({ count: res.sentTo })
@@ -102,16 +114,30 @@ export function GlobalMessages() {
             {recipientType === 'specific' && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                 <Label>Select user</Label>
+                {/* Search input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, email, or registration ID..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                {/* User dropdown (filtered) */}
                 <Select value={specificUserId} onValueChange={setSpecificUserId}>
-                  <SelectTrigger><SelectValue placeholder="Search and select a user..." /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={`${filteredUsers.length} users${userSearch ? ' match' : ' available'}`} /></SelectTrigger>
                   <SelectContent className="max-h-60">
-                    {users.map(u => (
+                    {filteredUsers.map(u => (
                       <SelectItem key={u.id} value={u.id}>
-                        {u.name} ({u.email}) — {u.role.replace('_', ' ')}
+                        {u.name} ({u.email}){u.registrationId ? ` — ${u.registrationId}` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {userSearch && filteredUsers.length === 0 && (
+                  <p className="text-xs text-muted-foreground">No users match your search.</p>
+                )}
               </div>
             )}
 
@@ -123,6 +149,19 @@ export function GlobalMessages() {
                 {recipientType === 'admins' && 'This message will be sent to all active hospital and super admins.'}
                 {recipientType === 'specific' && 'This message will be sent to the selected user only.'}
               </p>
+            </div>
+
+            {/* Allow replies toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg border-2 border-violet-200 dark:border-violet-800">
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <MessageSquare className="size-4" /> Allow replies
+                </Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {allowReplies ? 'Recipients can reply to this message.' : 'Recipients cannot reply — this is a one-way notification.'}
+                </p>
+              </div>
+              <Switch checked={allowReplies} onCheckedChange={setAllowReplies} />
             </div>
           </CardContent>
         </Card>
@@ -151,6 +190,13 @@ export function GlobalMessages() {
                 required
               />
             </div>
+            {!allowReplies && (
+              <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                <p className="text-xs text-amber-800 dark:text-amber-300">
+                  ℹ️ A note will be appended to the message indicating replies are disabled.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

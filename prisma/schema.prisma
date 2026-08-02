@@ -17,6 +17,7 @@ model Hospital {
   logoUrl     String?
   bannerUrl   String?
   address     String?
+  website     String?
   verified    Boolean  @default(false)
   status      String   @default("active")  // "active" | "suspended" | "banned"
   createdAt   DateTime @default(now())
@@ -68,6 +69,8 @@ model User {
   authProvider    String   @default("local")  // "local" | "google"
   emailVerified   DateTime?
   status          String   @default("active")  // "active" | "suspended" | "banned"
+  registrationId  String?  @unique  // e.g. "SG-STAFF-00001", "SG-ADMIN-00001"
+  website         String?
   hospitalId      String?
   hospital        Hospital? @relation(fields: [hospitalId], references: [id])
   specialty       String?

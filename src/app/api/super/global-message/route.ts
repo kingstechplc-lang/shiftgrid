@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden: super admin only' }, { status: 403 })
   }
 
-  const { recipientType, recipientId, subject, body: messageBody } = await req.json()
+  const { recipientType, recipientId, subject, body: messageBody, allowReplies } = await req.json()
   if (!subject || !messageBody) {
     return NextResponse.json({ error: 'Subject and body are required' }, { status: 400 })
   }
@@ -43,11 +43,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No recipients found' }, { status: 400 })
   }
 
-  // Create messages + notifications for each recipient
+  const repliesAllowed = allowReplies !== false // default true
+  const fullBody = repliesAllowed
+    ? `${subject}\n\n${messageBody}`
+    : `${subject}\n\n${messageBody}\n\n— Replies are disabled for this message.`
+
   const messages = recipients.map(r => ({
     senderId: user.id,
     recipientId: r.id,
-    body: `${subject}\n\n${messageBody}`,
+    body: fullBody,
     read: false,
   }))
 
@@ -64,6 +68,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     success: true,
     sentTo: recipients.length,
+    allowReplies: repliesAllowed,
     recipients: recipients.map(r => ({ id: r.id, name: r.name, email: r.email })),
   })
 }

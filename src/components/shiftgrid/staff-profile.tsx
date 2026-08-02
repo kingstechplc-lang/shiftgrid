@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Building2, MapPin, Save, Briefcase, Calendar, User, Phone, Camera, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Building2, MapPin, Save, Briefcase, Calendar, User, Phone, Camera, X, Loader2, CheckCircle2, AlertCircle, Globe } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { GHANA_REGIONS, getDistrictsForRegion, validateGhanaPhone, validateDigitalAddress, SPECIALTIES, AVAILABILITY_OPTIONS } from '@/lib/ghana-data'
 
@@ -36,6 +36,7 @@ export function StaffProfile() {
         availability: user.availability ?? '',
         bio: user.bio ?? '',
         preferredTypes: (user.preferredTypes ?? '').split(',').filter(Boolean),
+        website: user.website ?? '',
         // Personal info
         profilePhoto: user.profilePhoto ?? null,
         phoneNumber: user.phoneNumber ?? '',
@@ -345,6 +346,17 @@ export function StaffProfile() {
             <div className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" rows={4} value={form.bio} onChange={(e) => set('bio', e.target.value)} placeholder="Brief summary of your background, specialty interests, and what you're looking for..." />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="website"><Globe className="size-3 inline mr-1" /> Website</Label>
+              <Input
+                id="website"
+                type="url"
+                value={form.website}
+                onChange={(e) => set('website', e.target.value)}
+                placeholder="https://your-portfolio-or-linkedin.com"
+              />
+              <p className="text-xs text-muted-foreground">Personal website, portfolio, or LinkedIn profile</p>
             </div>
           </CardContent>
         </Card>

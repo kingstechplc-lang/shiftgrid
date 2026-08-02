@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Building2, MapPin, Save, ShieldCheck, Briefcase, Camera, ImageIcon, X, Loader2 } from "lucide-react"
+import { Building2, MapPin, Save, ShieldCheck, Briefcase, Camera, ImageIcon, X, Loader2, Globe } from "lucide-react"
 import { useToast } from '@/hooks/use-toast'
 
 export function HospitalSettings() {
@@ -36,6 +36,7 @@ export function HospitalSettings() {
         address: r.hospital.address ?? '',
         logoUrl: r.hospital.logoUrl ?? '',
         bannerUrl: r.hospital.bannerUrl ?? '',
+        website: r.hospital.website ?? '',
       })
     }).finally(() => setLoading(false))
   }, [user?.hospitalId, refreshKey])
@@ -223,6 +224,16 @@ export function HospitalSettings() {
             <div className="space-y-2">
               <Label htmlFor="haddr"><MapPin className="size-3 inline mr-1" /> Address</Label>
               <Textarea id="haddr" rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="hwebsite"><Globe className="size-3 inline mr-1" /> Website</Label>
+              <Input
+                id="hwebsite"
+                type="url"
+                value={form.website}
+                onChange={(e) => setForm({ ...form, website: e.target.value })}
+                placeholder="https://your-hospital-website.com"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="hdesc">Description</Label>

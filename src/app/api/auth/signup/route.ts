@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { hashPassword, SESSION_COOKIE, toSafeUser } from '@/lib/auth'
+import { hashPassword, SESSION_COOKIE, toSafeUser, generateRegistrationId } from '@/lib/auth'
 import { Role } from '@prisma/client'
 import { sendVerification } from '@/lib/verification'
 import { isDemoMode } from '@/lib/email'
@@ -8,7 +8,7 @@ import { isDemoMode } from '@/lib/email'
 // POST /api/auth/signup
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
-  const { email, password, name, role, hospitalName, hospitalAddress, specialty, specialtyOther, experienceYears, location, availability, preferredTypes, bio } = body || {}
+  const { email, password, name, role, hospitalName, hospitalAddress, hospitalWebsite, specialty, specialtyOther, experienceYears, location, availability, preferredTypes, bio, website } = body || {}
   if (!email || !password || !name || !role) {
     return NextResponse.json({ error: 'Email, password, name, and role are required.' }, { status: 400 })
   }
@@ -22,9 +22,11 @@ export async function POST(req: NextRequest) {
   let hospitalId: string | null = null
   if (role === 'hospital_admin') {
     if (!hospitalName) return NextResponse.json({ error: 'Hospital name required for admin sign-up.' }, { status: 400 })
-    const h = await db.hospital.create({ data: { name: String(hospitalName), address: hospitalAddress ?? null, description: null, verified: false } })
+    const h = await db.hospital.create({ data: { name: String(hospitalName), address: hospitalAddress ?? null, website: hospitalWebsite ?? null, description: null, verified: false } })
     hospitalId = h.id
   }
+
+  const registrationId = await generateRegistrationId(role)
 
   const user = await db.user.create({
     data: {
@@ -34,7 +36,9 @@ export async function POST(req: NextRequest) {
       role: role as Role,
       hospitalId,
       authProvider: 'local',
-      emailVerified: null,  // must verify before they can log in
+      emailVerified: null,
+      registrationId,
+      website: website ?? null,
       specialty: specialty ?? null,
       specialtyOther: specialty === 'Other' ? (specialtyOther ?? null) : null,
       experienceYears: experienceYears ? Number(experienceYears) : null,
@@ -46,16 +50,14 @@ export async function POST(req: NextRequest) {
     include: { hospital: true },
   })
 
-  // Send verification email (demo mode returns the code so the UI can display it)
   const emailResult = await sendVerification(user.id, user.email, user.name)
 
-  // Do NOT set the session cookie — user must verify email first.
-  // Return pending state so the frontend can show the verification screen.
   return NextResponse.json({
     pendingVerification: true,
     email: user.email,
     name: user.name,
     userId: user.id,
+    registrationId: user.registrationId,
     demoCode: isDemoMode() ? emailResult.code : undefined,
   }, { status: 201 })
 }

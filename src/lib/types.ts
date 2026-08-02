@@ -6,6 +6,9 @@ export type SafeUser = {
   role: 'super_admin' | 'hospital_admin' | 'staff'
   authProvider: string
   emailVerified: Date | null
+  status: string
+  registrationId: string | null
+  website: string | null
   hospitalId: string | null
   hospital?: { id: string; name: string; verified: boolean } | null
   specialty: string | null

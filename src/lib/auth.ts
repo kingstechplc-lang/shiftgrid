@@ -91,6 +91,24 @@ export async function requireSuperAdmin() {
   return user
 }
 
+// Generate a unique registration ID based on role
+export async function generateRegistrationId(role: string): Promise<string> {
+  const prefix = role === 'super_admin' ? 'SG-SUPER' : role === 'hospital_admin' ? 'SG-ADMIN' : 'SG-STAFF'
+  // Count existing users with this role to determine the next number
+  const count = await db.user.count({ where: { role: role as any } })
+  const num = String(count + 1).padStart(5, '0')
+  let regId = `${prefix}-${num}`
+  // Ensure uniqueness (in case of race condition)
+  let attempt = 0
+  while (attempt < 100) {
+    const existing = await db.user.findUnique({ where: { registrationId: regId } })
+    if (!existing) break
+    attempt++
+    regId = `${prefix}-${String(count + 1 + attempt).padStart(5, '0')}`
+  }
+  return regId
+}
+
 // Safe user object for client — never expose passwordHash
 export function toSafeUser(user: any) {
   return {
@@ -101,8 +119,10 @@ export function toSafeUser(user: any) {
     authProvider: user.authProvider ?? 'local',
     emailVerified: user.emailVerified ?? null,
     status: user.status ?? 'active',
+    registrationId: user.registrationId ?? null,
+    website: user.website ?? null,
     hospitalId: user.hospitalId,
-    hospital: user.hospital ? { id: user.hospital.id, name: user.hospital.name, verified: user.hospital.verified, address: user.hospital.address, description: user.hospital.description, logoUrl: user.hospital.logoUrl, bannerUrl: user.hospital.bannerUrl, status: user.hospital.status } : null,
+    hospital: user.hospital ? { id: user.hospital.id, name: user.hospital.name, verified: user.hospital.verified, address: user.hospital.address, description: user.hospital.description, logoUrl: user.hospital.logoUrl, bannerUrl: user.hospital.bannerUrl, website: user.hospital.website, status: user.hospital.status } : null,
     specialty: user.specialty,
     specialtyOther: user.specialtyOther ?? null,
     experienceYears: user.experienceYears,
