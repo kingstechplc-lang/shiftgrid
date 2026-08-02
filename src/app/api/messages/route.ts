@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/messages?withUserId=...&offerId=...
-//   Returns thread between current user and another user (optionally scoped to an offer)
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -23,7 +24,6 @@ export async function GET(req: NextRequest) {
       where,
       orderBy: { createdAt: 'asc' },
     })
-    // Mark unread messages as read
     await db.message.updateMany({
       where: { recipientId: user.id, senderId: withUserId, read: false, ...(offerId ? { offerId } : {}) },
       data: { read: true },
@@ -31,18 +31,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ items })
   }
 
-  // No withUserId — return list of conversation partners with last message preview
   const sent = await db.message.findMany({
     where: { senderId: user.id },
-    include: { recipient: { select: { id: true, name: true, role: true, hospital: { select: { name: true } } } }, offer: { select: { id: true, title: true } } },
+    include: { recipient: { select: { id: true, name: true, role: true, profilePhoto: true, hospital: { select: { name: true } } } }, offer: { select: { id: true, title: true } } },
     orderBy: { createdAt: 'desc' },
   })
   const received = await db.message.findMany({
     where: { recipientId: user.id },
-    include: { sender: { select: { id: true, name: true, role: true, hospital: { select: { name: true } } } }, offer: { select: { id: true, title: true } } },
+    include: { sender: { select: { id: true, name: true, role: true, profilePhoto: true, hospital: { select: { name: true } } } }, offer: { select: { id: true, title: true } } },
     orderBy: { createdAt: 'desc' },
   })
-  // Group by partner (and offer if set)
   const threadsMap = new Map<string, any>()
   for (const m of [...sent, ...received]) {
     const partnerId = m.senderId === user.id ? m.recipientId : m.senderId
@@ -52,6 +50,7 @@ export async function GET(req: NextRequest) {
       const partner = m.senderId === user.id ? m.recipient : m.sender
       threadsMap.set(key, {
         partnerId, partnerName: partner.name, partnerRole: partner.role,
+        partnerPhoto: partner.profilePhoto,
         partnerHospital: partner.hospital?.name ?? null,
         offerId: m.offerId ?? null, offerTitle: m.offer?.title ?? null,
         preview: m.body.length > 100 ? m.body.slice(0, 100) + '…' : m.body,
@@ -69,6 +68,20 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { recipientId, body, offerId } = await req.json()
   if (!recipientId || !body) return NextResponse.json({ error: 'recipientId and body required' }, { status: 400 })
+
+  // Check if recipient is a super admin and if they allow messages
+  const recipient = await db.user.findUnique({
+    where: { id: recipientId },
+    select: { role: true, canReceiveMessages: true, name: true },
+  })
+  if (!recipient) return NextResponse.json({ error: 'Recipient not found' }, { status: 404 })
+
+  if (recipient.role === 'super_admin' && recipient.canReceiveMessages === 'false') {
+    return NextResponse.json({
+      error: `${recipient.name} is not accepting messages at this time.`,
+    }, { status: 403 })
+  }
+
   const msg = await db.message.create({
     data: { senderId: user.id, recipientId, body, offerId: offerId ?? null },
   })

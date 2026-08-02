@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Building2, MapPin, Save, Briefcase, Calendar, User, Phone, Camera, X, Loader2, CheckCircle2, AlertCircle, Globe } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { GHANA_REGIONS, getDistrictsForRegion, validateGhanaPhone, validateDigitalAddress, SPECIALTIES, AVAILABILITY_OPTIONS } from '@/lib/ghana-data'
@@ -197,6 +198,14 @@ export function StaffProfile() {
                   onChange={handlePhotoUpload}
                   className="hidden"
                 />
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-sm">{user!.name}</span>
+                  {user!.registrationId && (
+                    <Badge variant="outline" className="font-mono text-[10px] bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 text-emerald-700">
+                      {user!.registrationId}
+                    </Badge>
+                  )}
+                </div>
                 <div className="flex gap-2 flex-wrap">
                   <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                     <Camera className="size-4 mr-1" /> {form.profilePhoto ? 'Change photo' : 'Upload photo'}

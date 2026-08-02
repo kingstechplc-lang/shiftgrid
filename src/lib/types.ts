@@ -9,6 +9,7 @@ export type SafeUser = {
   status: string
   registrationId: string | null
   website: string | null
+  canReceiveMessages: string
   hospitalId: string | null
   hospital?: { id: string; name: string; verified: boolean } | null
   specialty: string | null

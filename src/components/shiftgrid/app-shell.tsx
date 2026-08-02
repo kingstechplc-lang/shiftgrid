@@ -123,17 +123,19 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
       <div className="p-3 border-t">
         <div className="flex items-center gap-3 px-2 py-2">
           {user.profilePhoto ? (
-            <img src={user.profilePhoto} alt="" className="size-9 rounded-full object-cover" />
+            <img src={user.profilePhoto} alt={user.name} className="size-9 rounded-full object-cover" />
           ) : (
             <Avatar className="size-9">
-              <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs font-semibold">
+              <AvatarFallback className={`text-xs font-semibold ${user.role === 'super_admin' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>
                 {initials(user.name)}
               </AvatarFallback>
             </Avatar>
           )}
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">{user.name}</div>
-            <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+            {user.registrationId && (
+              <div className="text-[10px] font-mono text-muted-foreground truncate">{user.registrationId}</div>
+            )}
           </div>
           <ThemeToggle />
         </div>

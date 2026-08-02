@@ -71,6 +71,7 @@ model User {
   status          String   @default("active")  // "active" | "suspended" | "banned"
   registrationId  String?  @unique  // e.g. "SG-STAFF-00001", "SG-ADMIN-00001"
   website         String?
+  canReceiveMessages String? @default("true") // super admin toggle: "true" | "false"
   hospitalId      String?
   hospital        Hospital? @relation(fields: [hospitalId], references: [id])
   specialty       String?

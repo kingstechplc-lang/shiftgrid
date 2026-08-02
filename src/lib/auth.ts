@@ -121,6 +121,7 @@ export function toSafeUser(user: any) {
     status: user.status ?? 'active',
     registrationId: user.registrationId ?? null,
     website: user.website ?? null,
+    canReceiveMessages: user.canReceiveMessages ?? 'true',
     hospitalId: user.hospitalId,
     hospital: user.hospital ? { id: user.hospital.id, name: user.hospital.name, verified: user.hospital.verified, address: user.hospital.address, description: user.hospital.description, logoUrl: user.hospital.logoUrl, bannerUrl: user.hospital.bannerUrl, website: user.hospital.website, status: user.hospital.status } : null,
     specialty: user.specialty,
