@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Briefcase, Inbox, Bookmark, Bell, FileWarning, ArrowRight, Sparkles, Building2, Clock, TrendingUp, Zap, Calendar } from 'lucide-react'
+import { Briefcase, Inbox, Bookmark, Bell, FileWarning, ArrowRight, Sparkles, Building2, Clock, TrendingUp, Zap, Calendar, AlertCircle, RefreshCw } from 'lucide-react'
 import { OfferCard } from './offer-card'
 import { formatCurrency, timeAgo } from '@/lib/types'
 
@@ -22,17 +22,28 @@ export function StaffHome() {
   const { user, setView, openOffer } = useApp()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api<DashboardData>('/api/dashboard').then(setData).finally(() => setLoading(false))
+    api<DashboardData>('/api/dashboard')
+      .then(setData)
+      .catch((e) => setError(e.message || 'Failed to load dashboard'))
+      .finally(() => setLoading(false))
   }, [])
 
   if (loading) return <DashboardSkeleton />
-  if (!data) {
+  if (error || !data) {
     return (
       <div className="p-6 lg:p-8 max-w-7xl mx-auto">
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Unable to load dashboard. Please try refreshing.</p>
+          <div className="size-16 rounded-full bg-rose-100 dark:bg-rose-950/30 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="size-8 text-rose-600" />
+          </div>
+          <h3 className="font-medium text-lg mb-1">Unable to load dashboard</h3>
+          <p className="text-sm text-muted-foreground mb-4">{error || 'Unknown error'}</p>
+          <Button onClick={() => window.location.reload()} className="bg-emerald-600 hover:bg-emerald-700">
+            <RefreshCw className="size-4 mr-2" /> Refresh page
+          </Button>
         </div>
       </div>
     )
