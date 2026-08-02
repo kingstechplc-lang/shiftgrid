@@ -161,3 +161,34 @@ Stage Summary:
 - Production mode (with POSTMARK_API_KEY): sends real HTML email with code + verify link
 - Seed users pre-verified so existing demo logins still work (sarah.chen, james.morrison, etc.)
 - Security: unverified users cannot login (403), codes expire in 10 minutes, old codes invalidated when new ones generated, 30s resend cooldown
+
+---
+Task ID: 6
+Agent: Super Z (main)
+Task: Create GitHub repo and push project using user-provided PAT
+
+Work Log:
+- Validated user's GitHub PAT via /user API endpoint — confirmed login: kingstechplc-lang
+- Created comprehensive .gitignore (excludes node_modules, .next, .env, db/*.db, skills/, tests/, examples/, logs, .zscripts/, .agent-browser/)
+- Verified .env (contains Neon password) is NOT staged — security critical
+- Verified db/custom.db (SQLite binary) is NOT staged
+- Excluded skills/ folder (~50MB of skill templates unrelated to ShiftGrid)
+- Excluded tests/ and examples/ (sandbox runtime files, not part of project)
+- Reviewed existing git history — repo already had sandbox auto-commits with UUID messages containing all ShiftGrid source code
+- Created clean commit with proper message documenting all features + tech stack
+- Created GitHub repo via API: POST /user/repos with name=shiftgrid, description, public visibility
+- Pushed to https://github.com/kingstechplc-lang/shiftgrid.git (main branch)
+- Verified all 19 ShiftGrid components are on GitHub (src/components/shiftgrid/)
+- Verified prisma/schema.prisma is on GitHub (7491 chars)
+- Verified .env is NOT on GitHub (security check passed)
+- Removed PAT from git remote URL (replaced with clean HTTPS URL without credentials)
+- Wrote comprehensive README.md (176 lines): features, tech stack, quick start, demo accounts, project structure, DB schema, production deployment, env vars
+- Committed and pushed README
+
+Stage Summary:
+- GitHub repo live at: https://github.com/kingstechplc-lang/shiftgrid
+- 2 commits: initial project commit + README
+- All source code pushed: src/, prisma/, scripts/, download/db/, public/, config files
+- Secrets excluded: .env (Neon password), .env.sqlite-backup, db/custom.db (SQLite binary)
+- PAT was used to create repo + push, then removed from local git config
+- SECURITY: User shared PAT in chat — should be rotated at github.com/settings/tokens
