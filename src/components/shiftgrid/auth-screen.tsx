@@ -10,21 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { HeartPulse, Stethoscope, Building2, ShieldCheck, Clock, Mail, Loader2, Eye, EyeOff, CheckCircle2, Sparkles, Zap } from 'lucide-react'
+import { HeartPulse, Stethoscope, Building2, ShieldCheck, Clock, Mail, Loader2, Eye, EyeOff, CheckCircle2, Sparkles, ArrowRight } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { VerifyEmailScreen } from './verify-email-screen'
-
-const SPECIALTIES = [
-  'Emergency Medicine', 'Internal Medicine', 'Cardiology', 'ICU Nursing',
-  'Pediatric Nursing', 'Anesthesiology', 'Family Medicine', 'Diagnostic Radiology',
-  'Obstetrics & Gynecology', 'Physiotherapy', 'Pharmacy', 'Geriatrics',
-  'Psychology', 'Surgery', 'Orthopaedics', 'Psychiatry',
-  'Dentistry', 'Optometry', 'Midwifery', 'General Nursing',
-  'Public Health', 'Nutrition & Dietetics', 'Medical Laboratory Science',
-  'Radiography', 'Occupational Therapy', 'Speech Therapy',
-  'Biomedical Engineering', 'Health Administration',
-  'Other',
-]
+import { SPECIALTIES } from '@/lib/ghana-data'
 
 // Google "G" logo SVG (official colors)
 function GoogleIcon({ className }: { className?: string }) {
@@ -44,7 +33,7 @@ export function AuthScreen() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [googleLoading, setGoogleLoading] = useState<'staff' | 'admin' | null>(null)
 
-  // Verification state
+  // Verification state — when set, show the verify-email screen instead
   const [pendingVerification, setPendingVerification] = useState<{ email: string; name: string; userId: string; demoCode?: string } | null>(null)
 
   // Login form
@@ -85,13 +74,18 @@ export function AuthScreen() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
-    // Validate password confirmation
+    // Password confirmation validation
     if (suPassword !== suPasswordConfirm) {
       toast({ variant: 'destructive', title: 'Passwords do not match', description: 'Please make sure both passwords are identical.' })
       return
     }
     if (suPassword.length < 6) {
       toast({ variant: 'destructive', title: 'Password too short', description: 'Password must be at least 6 characters.' })
+      return
+    }
+    // Specialty validation
+    if (suRole === 'staff' && !suSpecialty) {
+      toast({ variant: 'destructive', title: 'Specialty required', description: 'Please select your specialty/role.' })
       return
     }
     if (suSpecialty === 'Other' && !suSpecialtyOther.trim()) {
@@ -142,6 +136,7 @@ export function AuthScreen() {
     setMode('login')
   }
 
+  // If pending verification, show the verify-email screen
   if (pendingVerification) {
     return (
       <VerifyEmailScreen
@@ -154,39 +149,40 @@ export function AuthScreen() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left: brand/marketing panel with animated background */}
+    <div className="min-h-screen flex flex-col lg:flex-row animate-in fade-in duration-500">
+      {/* Left: brand/marketing panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 text-white p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-        {/* Animated shimmer overlay */}
-        <div className="absolute inset-0 shimmer pointer-events-none" />
-        <div className="relative">
-          <div className="flex items-center gap-2 mb-12 animate-fade-in-up">
-            <div className="size-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center animate-float">
+        {/* Animated gradient orbs */}
+        <div className="absolute top-20 left-20 size-64 rounded-full bg-white/10 blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-20 size-80 rounded-full bg-teal-300/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-12 animate-in slide-in-from-left duration-700">
+            <div className="size-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
               <HeartPulse className="size-6" />
             </div>
             <span className="text-2xl font-semibold tracking-tight">ShiftGrid</span>
           </div>
-          <h1 className="text-4xl font-bold leading-tight mb-4 animate-fade-in-up" style={{ animationDelay: '0.1s', opacity: 0 }}>
+          <h1 className="text-4xl font-bold leading-tight mb-4 animate-in slide-in-from-left duration-700 delay-100">
             The marketplace connecting<br />hospitals with healthcare<br />professionals.
           </h1>
-          <p className="text-white/80 text-lg max-w-md animate-fade-in-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
+          <p className="text-white/80 text-lg max-w-md animate-in slide-in-from-left duration-700 delay-200">
             Post locum shifts and permanent roles. Browse, filter, apply, and track — all in one place.
           </p>
         </div>
-        <div className="relative grid grid-cols-2 gap-4 mt-12">
-          <FeatureCard icon={<Building2 className="size-5" />} title="Multi-hospital" body="One marketplace, many hospitals" delay="0.3s" />
-          <FeatureCard icon={<Stethoscope className="size-5" />} title="Locum & permanent" body="Same search, same pipeline" delay="0.35s" />
-          <FeatureCard icon={<ShieldCheck className="size-5" />} title="Email verified" body="Trusted, secure accounts" delay="0.4s" />
-          <FeatureCard icon={<Clock className="size-5" />} title="Urgent shifts" body="Fill ASAP openings fast" delay="0.45s" />
+        <div className="relative z-10 grid grid-cols-2 gap-4 mt-12 animate-in slide-in-from-bottom duration-700 delay-300">
+          <FeatureCard icon={<Building2 className="size-5" />} title="Multi-hospital" body="One marketplace, many hospitals" />
+          <FeatureCard icon={<Stethoscope className="size-5" />} title="Locum & permanent" body="Same search, same pipeline" />
+          <FeatureCard icon={<ShieldCheck className="size-5" />} title="Email verified" body="Trusted, secure accounts" />
+          <FeatureCard icon={<Clock className="size-5" />} title="Urgent shifts" body="Fill ASAP openings fast" />
         </div>
       </div>
 
       {/* Right: auth form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-background">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center animate-fade-in">
-            <div className="size-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white animate-float">
+        <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
+            <div className="size-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white">
               <HeartPulse className="size-6" />
             </div>
             <span className="text-2xl font-semibold">ShiftGrid</span>
@@ -199,17 +195,18 @@ export function AuthScreen() {
             </TabsList>
 
             {/* ────────────── LOGIN ────────────── */}
-            <TabsContent value="login">
-              <Card className="animate-scale-in">
+            <TabsContent value="login" className="animate-in fade-in duration-300">
+              <Card className="border-2 hover:border-emerald-200 transition-colors duration-300">
                 <CardHeader>
                   <CardTitle>Welcome back</CardTitle>
                   <CardDescription>Sign in to your ShiftGrid account.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {/* Google button */}
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full h-11 mb-3 border-2 hover:bg-muted/50 font-medium transition-all hover:scale-[1.01]"
+                    className="w-full h-11 mb-3 border-2 hover:bg-muted/50 font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
                     onClick={() => handleGoogleLogin('staff')}
                     disabled={googleLoading !== null}
                   >
@@ -254,22 +251,23 @@ export function AuthScreen() {
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
                           {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                         </button>
                       </div>
                     </div>
-                    <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 transition-all hover:scale-[1.01]">Sign in</Button>
+                    <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                      Sign in
+                    </Button>
                   </form>
 
                   <div className="mt-6 pt-6 border-t">
                     <p className="text-xs text-muted-foreground mb-3 text-center">Try a demo account:</p>
                     <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" size="sm" onClick={() => fillDemo('admin')}>
+                      <Button variant="outline" size="sm" onClick={() => fillDemo('admin')} className="hover:bg-emerald-50 hover:border-emerald-300 transition-colors">
                         <Building2 className="size-4 mr-1" /> Hospital Admin
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => fillDemo('staff')}>
+                      <Button variant="outline" size="sm" onClick={() => fillDemo('staff')} className="hover:bg-emerald-50 hover:border-emerald-300 transition-colors">
                         <Stethoscope className="size-4 mr-1" /> Healthcare Staff
                       </Button>
                     </div>
@@ -279,17 +277,18 @@ export function AuthScreen() {
             </TabsContent>
 
             {/* ────────────── SIGNUP ────────────── */}
-            <TabsContent value="signup">
-              <Card className="animate-scale-in">
+            <TabsContent value="signup" className="animate-in fade-in duration-300">
+              <Card className="border-2 hover:border-emerald-200 transition-colors duration-300">
                 <CardHeader>
                   <CardTitle>Create your account</CardTitle>
                   <CardDescription>Join ShiftGrid as a healthcare professional or hospital.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {/* Google button */}
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full h-11 mb-3 border-2 hover:bg-muted/50 font-medium transition-all hover:scale-[1.01]"
+                    className="w-full h-11 mb-3 border-2 hover:bg-muted/50 font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
                     onClick={() => handleGoogleLogin(suRole === 'staff' ? 'staff' : 'admin')}
                     disabled={googleLoading !== null}
                   >
@@ -332,7 +331,7 @@ export function AuthScreen() {
                         <Input id="suEmail" type="email" value={suEmail} onChange={(e) => setSuEmail(e.target.value)} required className="pl-9" />
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="suPassword">Password</Label>
                         <div className="relative">
@@ -343,14 +342,12 @@ export function AuthScreen() {
                             onChange={(e) => setSuPassword(e.target.value)}
                             required
                             minLength={6}
-                            placeholder="Min 6 characters"
                             className="pr-10"
                           />
                           <button
                             type="button"
                             onClick={() => setShowSuPassword(!showSuPassword)}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                            aria-label={showSuPassword ? 'Hide password' : 'Show password'}
                           >
                             {showSuPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                           </button>
@@ -366,21 +363,24 @@ export function AuthScreen() {
                             onChange={(e) => setSuPasswordConfirm(e.target.value)}
                             required
                             minLength={6}
-                            placeholder="Repeat password"
-                            className={`pr-10 ${suPasswordConfirm && suPassword !== suPasswordConfirm ? 'border-rose-400 focus-visible:ring-rose-400' : ''} ${suPasswordConfirm && suPassword === suPasswordConfirm ? 'border-emerald-400 focus-visible:ring-emerald-400' : ''}`}
+                            className={`pr-10 ${suPasswordConfirm && suPassword !== suPasswordConfirm ? 'border-rose-400 focus:border-rose-400' : suPasswordConfirm && suPassword === suPasswordConfirm ? 'border-emerald-400 focus:border-emerald-400' : ''}`}
                           />
                           <button
                             type="button"
                             onClick={() => setShowSuPasswordConfirm(!showSuPasswordConfirm)}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                            aria-label={showSuPasswordConfirm ? 'Hide password' : 'Show password'}
                           >
                             {showSuPasswordConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                           </button>
-                          {suPasswordConfirm && suPassword === suPasswordConfirm && (
-                            <CheckCircle2 className="absolute right-9 top-1/2 -translate-y-1/2 size-4 text-emerald-500" />
-                          )}
                         </div>
+                        {suPasswordConfirm && suPassword === suPasswordConfirm && (
+                          <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1">
+                            <CheckCircle2 className="size-3" /> Passwords match
+                          </p>
+                        )}
+                        {suPasswordConfirm && suPassword !== suPasswordConfirm && (
+                          <p className="text-xs text-rose-500 mt-1">Passwords do not match</p>
+                        )}
                       </div>
                     </div>
 
@@ -397,12 +397,12 @@ export function AuthScreen() {
                       </>
                     ) : (
                       <>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label htmlFor="suSpec">Specialty / Role</Label>
                             <Select value={suSpecialty} onValueChange={setSuSpecialty}>
                               <SelectTrigger id="suSpec"><SelectValue placeholder="Select specialty" /></SelectTrigger>
-                              <SelectContent className="max-h-72">
+                              <SelectContent className="max-h-60">
                                 {SPECIALTIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                               </SelectContent>
                             </Select>
@@ -413,13 +413,13 @@ export function AuthScreen() {
                           </div>
                         </div>
                         {suSpecialty === 'Other' && (
-                          <div className="space-y-2 animate-fade-in-up">
+                          <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
                             <Label htmlFor="suSpecOther">Please specify your specialty</Label>
                             <Input
                               id="suSpecOther"
                               value={suSpecialtyOther}
                               onChange={(e) => setSuSpecialtyOther(e.target.value)}
-                              placeholder="e.g. Nuclear Medicine"
+                              placeholder="e.g. Cardiothoracic Surgery"
                               required
                             />
                           </div>
@@ -431,15 +431,15 @@ export function AuthScreen() {
                       </>
                     )}
 
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 animate-fade-in">
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 animate-in fade-in duration-500">
                       <Mail className="size-4 text-emerald-600 shrink-0 mt-0.5" />
                       <p className="text-xs text-emerald-800 dark:text-emerald-300">
                         We&apos;ll send a 6-digit verification code to your email to confirm your account.
                       </p>
                     </div>
 
-                    <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 transition-all hover:scale-[1.01]">
-                      <Sparkles className="size-4 mr-1" /> Create account
+                    <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                      Create account <ArrowRight className="size-4 ml-1" />
                     </Button>
                   </form>
                 </CardContent>
@@ -452,9 +452,9 @@ export function AuthScreen() {
   )
 }
 
-function FeatureCard({ icon, title, body, delay }: { icon: React.ReactNode; title: string; body: string; delay: string }) {
+function FeatureCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/15 animate-fade-in-up card-hover-lift" style={{ animationDelay: delay, opacity: 0 }}>
+    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/15 hover:bg-white/15 transition-colors duration-300">
       <div className="flex items-center gap-2 mb-1">
         <div className="text-white/90">{icon}</div>
         <span className="font-medium text-sm">{title}</span>

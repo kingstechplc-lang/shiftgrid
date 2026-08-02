@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Briefcase, Inbox, Bookmark, Bell, FileWarning, ArrowRight, Sparkles, Building2, User } from 'lucide-react'
+import { Briefcase, Inbox, Bookmark, Bell, FileWarning, ArrowRight, Sparkles, Building2, Clock, TrendingUp, Zap, Calendar } from 'lucide-react'
 import { OfferCard } from './offer-card'
 import { formatCurrency, timeAgo } from '@/lib/types'
 
@@ -31,137 +31,128 @@ export function StaffHome() {
   if (!data) return null
 
   const s = data.stats
-  const hasRecommended = data.recommended && data.recommended.length > 0
-  const profileComplete = user?.phoneNumber && user?.region && user?.townCity
-  const totalApps = s.applications ?? 0
+  const recommended = data.recommended || []
+  const statusCounts = data.statusCounts || {}
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       {/* Welcome hero */}
-      <div className="animate-fade-in-up">
-        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-          Welcome back, <span className="gradient-text">{user?.name.split(' ')[0]}</span>
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          {user?.specialty && user.specialty !== 'Other' ? `${user.specialty} · ` : user?.specialtyOther ? `${user.specialtyOther} · ` : ''}
-          Here&apos;s what&apos;s happening with your search today.
-        </p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+        <div className="absolute top-0 right-0 size-48 rounded-full bg-white/10 blur-3xl animate-pulse" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="size-5" />
+            <span className="text-sm font-medium text-white/80">Welcome back</span>
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mb-1">
+            {user?.name?.split(' ')[0]} 👋
+          </h1>
+          <p className="text-white/80 text-sm lg:text-base">
+            {user?.specialty ? `${user.specialty} · ` : ''}Here&apos;s what&apos;s happening with your search today.
+          </p>
+        </div>
       </div>
 
-      {/* Profile completion banner */}
-      {!profileComplete && (
-        <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 dark:border-emerald-800 animate-fade-in-up" >
-          <CardContent className="p-5 flex items-start gap-3">
-            <div className="size-10 rounded-lg bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center shrink-0">
-              <Sparkles className="size-5 text-emerald-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-medium text-emerald-900 dark:text-emerald-200">Complete your profile</h3>
-              <p className="text-sm text-emerald-800 dark:text-emerald-300 mt-1">
-                Add your phone number and address to apply for offers faster. Hospitals prefer complete profiles.
-              </p>
-              <Button size="sm" className="mt-3 bg-emerald-600 hover:bg-emerald-700" onClick={() => setView('profile')}>
-                Complete profile <ArrowRight className="size-4 ml-1" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in-up" style={{ animationDelay: '0.05s', opacity: 0 }}>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
         <StatCard icon={<Inbox className="size-5" />} label="Active applications" value={s.applications ?? 0} accent="emerald" onClick={() => setView('applications')} />
         <StatCard icon={<Bookmark className="size-5" />} label="Saved offers" value={s.savedOffers ?? 0} accent="violet" onClick={() => setView('saved')} />
         <StatCard icon={<FileWarning className="size-5" />} label="Expiring credentials" value={s.expiringCreds ?? 0} accent={s.expiringCreds > 0 ? 'rose' : 'slate'} onClick={() => setView('credentials')} />
         <StatCard icon={<Bell className="size-5" />} label="Unread notifications" value={s.unreadNotifications ?? 0} accent={s.unreadNotifications > 0 ? 'amber' : 'slate'} onClick={() => setView('notifications')} />
       </div>
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in-up" style={{ animationDelay: '0.1s', opacity: 0 }}>
-        <QuickAction icon={<Briefcase className="size-5" />} label="Browse offers" description="Find your next role" onClick={() => setView('browse')} />
-        <QuickAction icon={<Bookmark className="size-5" />} label="Saved offers" description="Review bookmarked" onClick={() => setView('saved')} />
-        <QuickAction icon={<Inbox className="size-5" />} label="My applications" description="Track status" onClick={() => setView('applications')} />
-        <QuickAction icon={<User className="size-5" />} label="Edit profile" description="Update your info" onClick={() => setView('profile')} />
-      </div>
+      {/* Application status overview */}
+      {(statusCounts.applied || statusCounts.under_review || statusCounts.shortlisted || statusCounts.offered || statusCounts.accepted) > 0 && (
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="size-4 text-emerald-600" />
+              Application pipeline
+            </CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => setView('applications')}>
+              View all <ArrowRight className="size-3.5 ml-1" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'Applied', value: statusCounts.applied, color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
+                { label: 'Under Review', value: statusCounts.under_review, color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+                { label: 'Shortlisted', value: statusCounts.shortlisted, color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300' },
+                { label: 'Offered', value: statusCounts.offered, color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300' },
+                { label: 'Accepted', value: statusCounts.accepted, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+              ].map(stage => (
+                stage.value > 0 && (
+                  <button
+                    key={stage.label}
+                    onClick={() => setView('applications')}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all hover:scale-105 ${stage.color}`}
+                  >
+                    {stage.label}: <span className="font-bold">{stage.value}</span>
+                  </button>
+                )
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recommended offers */}
-      <div className="animate-fade-in-up" style={{ animationDelay: '0.15s', opacity: 0 }}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="size-5 text-emerald-600" />
-            <h2 className="text-lg font-semibold">Recommended for you</h2>
+      {recommended.length > 0 && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="size-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
+                <Sparkles className="size-4 text-emerald-600" />
+              </div>
+              <h2 className="text-lg font-semibold">Recommended for you</h2>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setView('browse')}>
+              Browse all <ArrowRight className="size-4 ml-1" />
+            </Button>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setView('browse')}>
-            Browse all <ArrowRight className="size-4 ml-1" />
-          </Button>
-        </div>
-        {hasRecommended ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {data.recommended!.map((o, i) => (
-              <div key={o.id} className="animate-fade-in-up" style={{ animationDelay: `${0.2 + i * 0.05}s`, opacity: 0 }}>
+            {recommended.map((o, i) => (
+              <div key={o.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${250 + i * 50}ms` }}>
                 <OfferCard offer={o} />
               </div>
             ))}
           </div>
-        ) : (
-          <Card className="border-dashed">
-            <CardContent className="p-12 text-center">
-              <div className="size-16 rounded-full bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center mx-auto mb-4 animate-float">
-                <Briefcase className="size-8 text-emerald-600" />
-              </div>
-              <h3 className="font-medium text-lg">No recommended offers yet</h3>
-              <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-                {user?.specialty
-                  ? `We couldn't find offers matching your specialty (${user.specialty}). Try browsing all available offers.`
-                  : 'Add your specialty to your profile and we\'ll surface matching offers here.'}
-              </p>
-              <div className="flex gap-2 justify-center mt-4">
-                <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setView('browse')}>
-                  Browse all offers <ArrowRight className="size-4 ml-1" />
-                </Button>
-                {!user?.specialty && (
-                  <Button variant="outline" onClick={() => setView('profile')}>
-                    Update profile
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Application status overview */}
-      {totalApps > 0 && data.statusCounts && (
-        <div className="animate-fade-in-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
-          <h2 className="text-lg font-semibold mb-4">Application overview</h2>
-          <Card>
-            <CardContent className="p-5">
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                {['applied','under_review','shortlisted','offered','accepted','declined','withdrawn'].map(stage => {
-                  const count = data.statusCounts![stage] ?? 0
-                  const pct = totalApps ? Math.round((count / totalApps) * 100) : 0
-                  return (
-                    <button key={stage} onClick={() => setView('applications')} className="text-left p-3 rounded-lg hover:bg-muted transition-colors">
-                      <div className="text-2xl font-bold">{count}</div>
-                      <div className="text-xs text-muted-foreground capitalize">{stage.replace('_', ' ')}</div>
-                      <div className="h-1 bg-muted rounded-full mt-2 overflow-hidden">
-                        <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
         </div>
       )}
 
-      {/* Credential warning */}
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+        <QuickActionCard
+          icon={<Briefcase className="size-5" />}
+          title="Browse offers"
+          description="Find locum and permanent roles"
+          accent="emerald"
+          onClick={() => setView('browse')}
+        />
+        <QuickActionCard
+          icon={<Calendar className="size-5" />}
+          title="My applications"
+          description="Track your application status"
+          accent="violet"
+          onClick={() => setView('applications')}
+        />
+        <QuickActionCard
+          icon={<FileWarning className="size-5" />}
+          title="Update profile"
+          description="Complete your profile for better matches"
+          accent="amber"
+          onClick={() => setView('profile')}
+        />
+      </div>
+
+      {/* Credential expiry alert */}
       {s.expiringCreds > 0 && (
-        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-900 animate-fade-in-up" style={{ animationDelay: '0.25s', opacity: 0 }}>
+        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-900 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500">
           <CardContent className="p-5 flex items-start gap-3">
-            <div className="size-10 rounded-lg bg-amber-100 dark:bg-amber-900 flex items-center justify-center shrink-0">
-              <FileWarning className="size-5 text-amber-600" />
+            <div className="size-10 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
+              <FileWarning className="size-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div className="flex-1">
               <h3 className="font-medium text-amber-900 dark:text-amber-200">Credential expiring soon</h3>
@@ -169,72 +160,112 @@ export function StaffHome() {
                 You have {s.expiringCreds} credential{s.expiringCreds === 1 ? '' : 's'} expiring within 30 days. Keep your profile current to maintain eligibility for active applications.
               </p>
               <Button size="sm" variant="outline" className="mt-3 border-amber-400 text-amber-800 hover:bg-amber-100 dark:text-amber-300" onClick={() => setView('credentials')}>
-                Review credentials
+                Review credentials <ArrowRight className="size-3.5 ml-1" />
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
+    </div>
+  )
+}
 
-      {/* Tips section */}
-      <div className="animate-fade-in-up" style={{ animationDelay: '0.3s', opacity: 0 }}>
-        <h2 className="text-lg font-semibold mb-4">Tips for success</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <TipCard
-            icon={<Sparkles className="size-5" />}
-            title="Complete your profile"
-            body="Hospitals are 3x more likely to shortlist candidates with complete profiles, including credentials and a bio."
-            action={() => setView('profile')}
-            actionLabel="Update profile"
-          />
-          <TipCard
-            icon={<Bell className="size-5" />}
-            title="Stay responsive"
-            body="Respond to messages from hospital admins within 24 hours to improve your chances of getting offers."
-            action={() => setView('messages')}
-            actionLabel="Check messages"
-          />
-          <TipCard
-            icon={<FileWarning className="size-5" />}
-            title="Keep credentials current"
-            body="Expired licenses can pause your applications. Upload renewals as soon as you receive them."
-            action={() => setView('credentials')}
-            actionLabel="Add credentials"
-          />
+function StatCard({ icon, label, value, accent, onClick }: { icon: React.ReactNode; label: string; value: number; accent: string; onClick?: () => void }) {
+  const accentClasses: Record<string, string> = {
+    emerald: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+    violet: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+    rose: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+    teal: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
+    slate: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  }
+  return (
+    <button onClick={onClick} className="text-left group">
+      <Card className="hover:shadow-md hover:border-emerald-200 transition-all duration-300 hover:scale-[1.02] h-full">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className={`size-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 ${accentClasses[accent] ?? accentClasses.slate}`}>
+              {icon}
+            </div>
+            {value > 0 && accent !== 'slate' && (
+              <span className={`size-2 rounded-full ${accentClasses[accent] ?? accentClasses.slate} animate-pulse`} />
+            )}
+          </div>
+          <div className="text-2xl font-bold">{value}</div>
+          <div className="text-xs text-muted-foreground">{label}</div>
+        </CardContent>
+      </Card>
+    </button>
+  )
+}
+
+function QuickActionCard({ icon, title, description, accent, onClick }: { icon: React.ReactNode; title: string; description: string; accent: string; onClick: () => void }) {
+  const accentClasses: Record<string, string> = {
+    emerald: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+    violet: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  }
+  return (
+    <button onClick={onClick} className="text-left group">
+      <Card className="hover:shadow-md hover:border-emerald-200 transition-all duration-300 hover:scale-[1.02] h-full">
+        <CardContent className="p-5 flex items-start gap-3">
+          <div className={`size-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${accentClasses[accent]}`}>
+            {icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-sm">{title}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{description}</div>
+          </div>
+          <ArrowRight className="size-4 text-muted-foreground group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
+        </CardContent>
+      </Card>
+    </button>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {/* Hero skeleton */}
+      <div className="h-32 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 animate-pulse" />
+      {/* Stats skeleton */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[0,1,2,3].map(i => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <Skeleton className="size-9 rounded-lg mb-2" />
+              <Skeleton className="h-7 w-12 mb-1" />
+              <Skeleton className="h-3 w-20" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      {/* Recommended skeleton */}
+      <div>
+        <Skeleton className="h-6 w-48 mb-4" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {[0,1,2].map(i => (
+            <Card key={i}>
+              <CardContent className="p-5 space-y-3">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-3 w-32" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </div>
   )
 }
 
-function QuickAction({ icon, label, description, onClick }: { icon: React.ReactNode; label: string; description: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="text-left p-4 rounded-xl border bg-background hover:bg-muted/50 hover:shadow-md transition-all card-hover-lift group">
-      <div className="size-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-        {icon}
-      </div>
-      <div className="font-medium text-sm">{label}</div>
-      <div className="text-xs text-muted-foreground">{description}</div>
-    </button>
-  )
-}
-
-function TipCard({ icon, title, body, action, actionLabel }: { icon: React.ReactNode; title: string; body: string; action: () => void; actionLabel: string }) {
-  return (
-    <Card className="card-hover-lift">
-      <CardContent className="p-5">
-        <div className="size-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center mb-3">
-          {icon}
-        </div>
-        <h3 className="font-medium text-sm mb-1">{title}</h3>
-        <p className="text-xs text-muted-foreground leading-relaxed mb-3">{body}</p>
-        <button onClick={action} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
-          {actionLabel} <ArrowRight className="size-3" />
-        </button>
-      </CardContent>
-    </Card>
-  )
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Dashboard (kept in same file for simplicity)
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function AdminDashboard() {
   const { user, setView, openOfferDetail, openOfferEdit } = useApp()
@@ -254,34 +285,42 @@ export function AdminDashboard() {
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1 flex items-center gap-1.5">
-            <Building2 className="size-4" />
-            {user?.hospital?.name}
-            {!user?.hospital?.verified && (
-              <Badge variant="outline" className="ml-1 text-amber-700 border-amber-400">Pending verification</Badge>
-            )}
-          </p>
+      {/* Welcome hero */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, white 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+        <div className="absolute top-0 right-0 size-48 rounded-full bg-white/10 blur-3xl animate-pulse" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Building2 className="size-5" />
+              <span className="text-sm font-medium text-white/80">{user?.hospital?.name}</span>
+              {!user?.hospital?.verified && (
+                <Badge variant="outline" className="bg-amber-500/20 border-amber-300 text-amber-100 text-[10px]">Pending verification</Badge>
+              )}
+            </div>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Dashboard</h1>
+          </div>
+          <Button className="bg-white text-emerald-700 hover:bg-white/90" onClick={() => openOfferEdit(null)}>
+            <Briefcase className="size-4 mr-1" /> New offer
+          </Button>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => openOfferEdit(null)}>
-          <Briefcase className="size-4 mr-1" /> New offer
-        </Button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
         <StatCard icon={<Briefcase className="size-5" />} label="Open offers" value={s.openOffers ?? 0} accent="emerald" onClick={() => setView('offers')} />
         <StatCard icon={<Inbox className="size-5" />} label="Total applicants" value={s.applicants ?? 0} accent="violet" onClick={() => setView('offers')} />
-        <StatCard icon={<Bell className="size-5" />} label="Upcoming shifts (7d)" value={s.upcomingShifts ?? 0} accent="amber" onClick={() => setView('offers')} />
+        <StatCard icon={<Clock className="size-5" />} label="Upcoming shifts (7d)" value={s.upcomingShifts ?? 0} accent="amber" onClick={() => setView('offers')} />
         <StatCard icon={<Sparkles className="size-5" />} label="Filled roles" value={s.filledRoles ?? 0} accent="teal" onClick={() => setView('offers')} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pipeline summary */}
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
           <CardHeader>
-            <CardTitle className="text-base">Applicant pipeline</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="size-4 text-emerald-600" />
+              Applicant pipeline
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {pipelineTotal === 0 ? (
@@ -298,7 +337,7 @@ export function AdminDashboard() {
                         <span className="text-muted-foreground">{count} · {pct}%</span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div className={`h-full ${pipelineBarColor(stage)}`} style={{ width: `${pct}%` }} />
+                        <div className={`h-full transition-all duration-500 ${pipelineBarColor(stage)}`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   )
@@ -309,7 +348,7 @@ export function AdminDashboard() {
         </Card>
 
         {/* Recent offers */}
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="text-base">Recent offers</CardTitle>
             <Button variant="ghost" size="sm" onClick={() => setView('offers')}>View all</Button>
@@ -320,7 +359,7 @@ export function AdminDashboard() {
             ) : (
               <div className="space-y-2">
                 {data.recentOffers?.map((o: any) => (
-                  <button key={o.id} onClick={() => openOfferDetail(o.id)} className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted text-left">
+                  <button key={o.id} onClick={() => openOfferDetail(o.id)} className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted text-left transition-colors">
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium truncate">{o.title}</div>
                       <div className="text-xs text-muted-foreground flex items-center gap-2">
@@ -339,7 +378,7 @@ export function AdminDashboard() {
       </div>
 
       {data.recentApplicants?.length > 0 && (
-        <Card>
+        <Card className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
           <CardHeader>
             <CardTitle className="text-base">Recent applicants</CardTitle>
           </CardHeader>
@@ -364,32 +403,6 @@ export function AdminDashboard() {
   )
 }
 
-function StatCard({ icon, label, value, accent, onClick }: { icon: React.ReactNode; label: string; value: number; accent: string; onClick?: () => void }) {
-  const accentClasses: Record<string, string> = {
-    emerald: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
-    violet: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
-    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
-    rose: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
-    teal: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
-    slate: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  }
-  return (
-    <button onClick={onClick} className="text-left">
-      <Card className="hover:shadow-sm transition-shadow h-full">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className={`size-9 rounded-lg flex items-center justify-center ${accentClasses[accent] ?? accentClasses.slate}`}>
-              {icon}
-            </div>
-          </div>
-          <div className="text-2xl font-bold">{value}</div>
-          <div className="text-xs text-muted-foreground">{label}</div>
-        </CardContent>
-      </Card>
-    </button>
-  )
-}
-
 function pipelineBarColor(stage: string): string {
   const map: Record<string, string> = {
     applied: 'bg-slate-400',
@@ -401,27 +414,4 @@ function pipelineBarColor(stage: string): string {
     withdrawn: 'bg-slate-300',
   }
   return map[stage] ?? 'bg-slate-300'
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="space-y-2">
-        <div className="h-9 w-72 shimmer-skeleton rounded-lg" />
-        <div className="h-4 w-96 shimmer-skeleton rounded" />
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[0,1,2,3].map(i => <div key={i} className="h-28 shimmer-skeleton rounded-xl" />)}
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[0,1,2,3].map(i => <div key={i} className="h-20 shimmer-skeleton rounded-xl" />)}
-      </div>
-      <div className="space-y-2">
-        <div className="h-6 w-48 shimmer-skeleton rounded" />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {[0,1,2].map(i => <div key={i} className="h-44 shimmer-skeleton rounded-xl" />)}
-      </div>
-    </div>
-  )
 }
