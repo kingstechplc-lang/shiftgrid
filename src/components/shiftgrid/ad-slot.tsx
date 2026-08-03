@@ -1,159 +1,200 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 
-type AdVariant = 'skyscraper' | 'mobile-banner' | 'native'
+interface AdConfig {
+  slotName: string
+  label: string
+  adKey?: string | null
+  adScriptSrc?: string | null
+  width?: number | null
+  height?: number | null
+  adType: string // "atoptions" | "native" | "custom"
+  customCode?: string | null
+}
+
+// Cache for ad configs — fetched once per page load
+let adConfigCache: Record<string, AdConfig> | null = null
+let adConfigPromise: Promise<Record<string, AdConfig>> | null = null
+
+async function fetchAdConfigs(): Promise<Record<string, AdConfig>> {
+  if (adConfigCache) return adConfigCache
+  if (adConfigPromise) return adConfigPromise
+
+  adConfigPromise = fetch('/api/ads').then(r => r.json()).then(data => {
+    adConfigCache = data.ads || {}
+    return adConfigCache
+  }).catch(() => {
+    adConfigCache = {}
+    return {}
+  })
+
+  return adConfigPromise
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Core AdSlot — renders ad in an isolated iframe to prevent atOptions conflicts
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface AdSlotProps {
-  variant: AdVariant
+  slotName: string // "skyscraper" | "leaderboard" | "mobile_banner" | "native"
   className?: string
   label?: string
 }
 
-// Adsterra ad configurations
-const AD_CONFIGS = {
-  skyscraper: {
-    key: '435fa794ab27249e1ebebea502a8ebe2',
-    width: 160,
-    height: 600,
-    scriptSrc: 'https://www.highperformanceformat.com/435fa794ab27249e1ebebea502a8ebe2/invoke.js',
-  },
-  'mobile-banner': {
-    key: '49b9469e70a7c6ba5a53aca9834c4282',
-    width: 320,
-    height: 50,
-    scriptSrc: 'https://www.highperformanceformat.com/49b9469e70a7c6ba5a53aca9834c4282/invoke.js',
-  },
-  native: {
-    key: 'f4f5a78d91d7cfa27c8e5f86ee630713',
-    scriptSrc: 'https://pl30656065.effectivecpmnetwork.com/f4f5a78d91d7cfa27c8e5f86ee630713/invoke.js',
-    containerId: 'container-f4f5a78d91d7cfa27c8e5f86ee630713',
-  },
-}
-
-let adInstanceId = 0
-
-export function AdSlot({ variant, className = '', label = 'Sponsored' }: AdSlotProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
+export function AdSlot({ slotName, className = '', label = 'Sponsored' }: AdSlotProps) {
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const [config, setConfig] = useState<AdConfig | null>(null)
   const [loaded, setLoaded] = useState(false)
-  const instanceId = useRef(`ad-${variant}-${++adInstanceId}`)
 
   useEffect(() => {
-    if (!containerRef.current) return
+    fetchAdConfigs().then(configs => {
+      const cfg = configs[slotName]
+      if (cfg) setConfig(cfg)
+    })
+  }, [slotName])
 
-    const config = AD_CONFIGS[variant]
-    const container = containerRef.current
+  const writeAdToIframe = useCallback(() => {
+    if (!iframeRef.current || !config) return
 
-    // Clear any existing content
-    container.innerHTML = ''
+    const iframe = iframeRef.current
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!doc) return
 
-    if (variant === 'native') {
-      // Native ad: create container div + load script
-      const adDiv = document.createElement('div')
-      adDiv.id = config.containerId
-      container.appendChild(adDiv)
+    // Build the HTML for the iframe
+    let html = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;padding:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:transparent;}</style></head><body>'
 
-      const script = document.createElement('script')
-      script.async = true
-      script.setAttribute('data-cfasync', 'false')
-      script.src = config.scriptSrc
-      script.onload = () => setLoaded(true)
-      script.onerror = () => setLoaded(false)
-      container.appendChild(script)
-    } else {
-      // Skyscraper + mobile banner: use atOptions pattern
-      const atOptionsScript = document.createElement('script')
-      atOptionsScript.type = 'text/javascript'
-      atOptionsScript.text = `
-        atOptions = {
-          'key' : '${config.key}',
-          'format' : 'iframe',
-          'height' : ${config.height},
-          'width' : ${config.width},
-          'params' : {}
-        };
-      `
-      container.appendChild(atOptionsScript)
-
-      const invokeScript = document.createElement('script')
-      invokeScript.type = 'text/javascript'
-      invokeScript.src = config.scriptSrc
-      invokeScript.async = true
-      invokeScript.onload = () => setLoaded(true)
-      invokeScript.onerror = () => setLoaded(false)
-      container.appendChild(invokeScript)
+    if (config.adType === 'native') {
+      // Native ad: container div + script
+      html += `<div id="container-${config.adKey}"></div>`
+      html += `<script async="async" data-cfasync="false" src="${config.adScriptSrc}"></script>`
+    } else if (config.adType === 'custom' && config.customCode) {
+      // Custom ad code
+      html += config.customCode
+    } else if (config.adKey && config.adScriptSrc) {
+      // atOptions pattern — isolated in iframe so no conflicts
+      html += `<script>`
+      html += `atOptions = {`
+      html += `'key' : '${config.adKey}',`
+      html += `'format' : 'iframe',`
+      html += `'height' : ${config.height || 600},`
+      html += `'width' : ${config.width || 160},`
+      html += `'params' : {}`
+      html += `};`
+      html += `</script>`
+      html += `<script src="${config.adScriptSrc}"></script>`
     }
 
-    return () => {
-      if (container) container.innerHTML = ''
+    html += '</body></html>'
+
+    doc.open()
+    doc.write(html)
+    doc.close()
+    setLoaded(true)
+  }, [config])
+
+  useEffect(() => {
+    if (config) {
+      // Small delay to ensure iframe is ready
+      const timer = setTimeout(writeAdToIframe, 100)
+      return () => clearTimeout(timer)
     }
-  }, [variant])
+  }, [config, writeAdToIframe])
 
-  const config = AD_CONFIGS[variant]
+  if (!config) {
+    // Still loading config or slot is disabled
+    return null
+  }
 
-  // Different wrapper styles per variant
-  const wrapperClass = {
-    skyscraper: 'flex flex-col items-center',
-    'mobile-banner': 'flex justify-center',
-    native: 'w-full',
-  }[variant]
-
-  const dimensions = variant !== 'native' ? { width: config.width, height: config.height } : undefined
+  const w = config.width || '100%'
+  const h = config.height || 90
 
   return (
-    <div className={`ad-slot ${wrapperClass} ${className}`}>
-      {/* Sponsored label */}
-      <div className="text-[9px] uppercase tracking-wider text-muted-foreground/60 mb-1 font-medium">
-        {label}
-      </div>
-      {/* Ad container */}
-      <div
-        ref={containerRef}
-        className="overflow-hidden rounded-lg"
-        style={dimensions ? { width: config.width, height: config.height, maxWidth: '100%' } : { minHeight: 90 }}
+    <div className={`ad-slot flex flex-col items-center ${className}`}>
+      {label && (
+        <div className="text-[9px] uppercase tracking-wider text-muted-foreground/50 mb-0.5 font-medium">
+          {label}
+        </div>
+      )}
+      <iframe
+        ref={iframeRef}
+        title={`ad-${slotName}`}
+        width={w}
+        height={h}
+        style={{ border: 'none', maxWidth: '100%', overflow: 'hidden' }}
+        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        scrolling="no"
       />
     </div>
   )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Strategic ad placement wrappers
+// Strategic placement wrappers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Sidebar skyscraper — desktop only, appears in right sidebar
+// Sidebar skyscraper — desktop only (xl+)
 export function SidebarAd() {
   return (
-    <div className="hidden xl:block sticky top-6">
+    <div className="hidden xl:flex flex-col items-center sticky top-6">
       <div className="rounded-xl border-2 border-dashed border-muted-foreground/20 p-3 bg-muted/30">
-        <AdSlot variant="skyscraper" label="Sponsored" />
+        <AdSlot slotName="skyscraper" label="Sponsored" />
       </div>
     </div>
   )
 }
 
-// Mobile sticky bottom banner — mobile only
-export function MobileStickyAd() {
+// Mobile sticky bottom banner — mobile only, dismissible
+export function MobileStickyAd({ onDismiss }: { onDismiss?: () => void }) {
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t border-border p-1 flex justify-center">
-      <AdSlot variant="mobile-banner" label="" className="py-0" />
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t border-border flex items-center justify-center relative py-1">
+      {onDismiss && (
+        <button
+          onClick={onDismiss}
+          className="absolute top-0.5 right-1 size-5 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 z-10"
+          aria-label="Dismiss ad"
+        >
+          <span className="text-xs">✕</span>
+        </button>
+      )}
+      <AdSlot slotName="mobile_banner" label="" />
     </div>
+  )
+}
+
+// Desktop leaderboard — shown on desktop only (between sections)
+export function DesktopLeaderboardAd() {
+  return (
+    <div className="hidden lg:flex my-4 rounded-xl border-2 border-dashed border-muted-foreground/15 p-3 bg-muted/20 justify-center">
+      <AdSlot slotName="leaderboard" label="Sponsored" />
+    </div>
+  )
+}
+
+// Mobile inline banner — shown on mobile only (between sections)
+export function MobileInlineAd() {
+  return (
+    <div className="lg:hidden my-4 rounded-xl border-2 border-dashed border-muted-foreground/15 p-3 bg-muted/20 flex justify-center">
+      <AdSlot slotName="mobile_banner" label="Sponsored" />
+    </div>
+  )
+}
+
+// Inline banner — responsive (leaderboard on desktop, mobile banner on mobile)
+export function InlineBannerAd() {
+  return (
+    <>
+      <DesktopLeaderboardAd />
+      <MobileInlineAd />
+    </>
   )
 }
 
 // In-feed native ad — between content items
 export function InFeedAd() {
   return (
-    <div className="my-4 rounded-xl border-2 border-dashed border-muted-foreground/15 p-3 bg-muted/20">
-      <AdSlot variant="native" label="Sponsored Content" />
-    </div>
-  )
-}
-
-// Inline banner ad — between sections (e.g., between dashboard sections)
-export function InlineBannerAd() {
-  return (
-    <div className="my-4 rounded-xl border-2 border-dashed border-muted-foreground/15 p-3 bg-muted/20 flex justify-center">
-      <AdSlot variant="mobile-banner" label="Sponsored" />
+    <div className="my-4 col-span-full rounded-xl border-2 border-dashed border-muted-foreground/15 p-3 bg-muted/20">
+      <AdSlot slotName="native" label="Sponsored Content" />
     </div>
   )
 }

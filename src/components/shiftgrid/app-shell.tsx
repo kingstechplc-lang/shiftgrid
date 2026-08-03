@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import {
   HeartPulse, LayoutDashboard, Briefcase, Inbox, Bookmark,
   User, MessageSquare, Bell, Building2, Users, Settings,
-  LogOut, Menu, FileText, Search, ShieldCheck, Stethoscope, Globe, Send, ImagePlus, ImageIcon, X,
+  LogOut, Menu, FileText, Search, ShieldCheck, Stethoscope, Globe, Send, ImagePlus, ImageIcon, X, Megaphone as MegaphoneIcon,
 } from 'lucide-react'
 import { SidebarAd, MobileStickyAd } from './ad-slot'
 import type { View } from '@/lib/store'
@@ -47,6 +47,7 @@ const SUPER_ADMIN_NAV: NavItem[] = [
   { view: 'super-offers', label: 'All Offers', icon: <Briefcase className="size-4" /> },
   { view: 'super-banners', label: 'Banners', icon: <ImagePlus className="size-4" /> },
   { view: 'super-media', label: 'Media Library', icon: <ImageIcon className="size-4" /> },
+  { view: 'super-ads', label: 'Ad Management', icon: <MegaphoneIcon className="size-4" /> },
   { view: 'super-messages', label: 'Global Messages', icon: <Send className="size-4" /> },
   { view: 'messages', label: 'My Messages', icon: <MessageSquare className="size-4" /> },
   { view: 'notifications', label: 'Notifications', icon: <Bell className="size-4" /> },
@@ -200,16 +201,7 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
 
       {/* Mobile sticky bottom ad — mobile only, staff only, dismissible */}
       {showAds && !adDismissed && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t border-border flex items-center justify-center relative">
-          <button
-            onClick={() => setAdDismissed(true)}
-            className="absolute top-1 right-1 size-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 z-10"
-            aria-label="Dismiss ad"
-          >
-            <X className="size-3" />
-          </button>
-          <MobileStickyAd />
-        </div>
+        <MobileStickyAd onDismiss={() => setAdDismissed(true)} />
       )}
     </div>
   )

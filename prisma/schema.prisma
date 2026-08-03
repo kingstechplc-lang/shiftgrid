@@ -110,6 +110,7 @@ model User {
   verificationTokens VerificationToken[]
   bannersCreated PlatformBanner[] @relation("BannerCreator")
   mediaUploaded  MediaAsset[] @relation("MediaUploader")
+  adConfigsUpdated AdConfig[] @relation("AdConfigUpdater")
 }
 
 model VerificationToken {
@@ -264,5 +265,21 @@ model MediaAsset {
   height       Int?
   mimeType     String?
   createdAt    DateTime @default(now())
+}
+
+model AdConfig {
+  id           String   @id @default(cuid())
+  slotName     String   @unique  // "skyscraper" | "leaderboard" | "mobile_banner" | "native"
+  label        String   // human-readable label
+  enabled      Boolean  @default(true)
+  adKey        String?  // Adsterra key (e.g. "435fa794ab27249e1ebebea502a8ebe2")
+  adScriptSrc  String?  // full script URL
+  width        Int?
+  height       Int?
+  adType       String   @default("atoptions") // "atoptions" | "native" | "custom"
+  customCode   String?  // for custom ad scripts
+  updatedAt    DateTime @updatedAt
+  updatedById  String?
+  updatedBy    User?    @relation("AdConfigUpdater", fields: [updatedById], references: [id])
 }
 

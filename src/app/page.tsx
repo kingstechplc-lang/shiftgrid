@@ -26,6 +26,7 @@ import { SuperAdminDashboard, SuperHospitals, SuperUsers, SuperOffers } from '@/
 import { GlobalMessages } from '@/components/shiftgrid/global-messages'
 import { AdminBanners } from '@/components/shiftgrid/admin-banners'
 import { MediaLibrary } from '@/components/shiftgrid/media-library'
+import { AdManagement } from '@/components/shiftgrid/ad-management'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Home() {
@@ -85,6 +86,7 @@ function ViewRouter({ view, user, selectedOfferId, selectedApplicationId }: { vi
       case 'super-offers': return <SuperOffers />
       case 'super-banners': return <AdminBanners />
       case 'super-media': return <MediaLibrary />
+      case 'super-ads': return <AdManagement />
       case 'super-messages': return <GlobalMessages />
       case 'messages': return <Messages />
       case 'notifications': return <Notifications />

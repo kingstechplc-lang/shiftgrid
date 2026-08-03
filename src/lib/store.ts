@@ -30,6 +30,7 @@ export type View =
   | 'super-messages'
   | 'super-banners'
   | 'super-media'
+  | 'super-ads'
 
 type AppState = {
   user: SafeUser | null
