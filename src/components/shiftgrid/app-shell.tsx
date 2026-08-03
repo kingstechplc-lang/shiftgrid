@@ -12,7 +12,7 @@ import {
   User, MessageSquare, Bell, Building2, Users, Settings,
   LogOut, Menu, FileText, Search, ShieldCheck, Stethoscope, Globe, Send, ImagePlus, ImageIcon, X, Megaphone as MegaphoneIcon,
 } from 'lucide-react'
-import { SidebarAd, MobileStickyAd } from './ad-slot'
+import { SidebarAd, MobileStickyAd, SocialBarAd } from './ad-slot'
 import type { View } from '@/lib/store'
 import type { SafeUser } from '@/lib/types'
 
@@ -203,6 +203,9 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
       {showAds && !adDismissed && (
         <MobileStickyAd onDismiss={() => setAdDismissed(true)} />
       )}
+
+      {/* Social bar / popunder — loads invisibly for staff users */}
+      {showAds && <SocialBarAd />}
     </div>
   )
 }

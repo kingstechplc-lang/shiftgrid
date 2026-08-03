@@ -33,6 +33,8 @@ const SLOT_DESCRIPTIONS: Record<string, string> = {
   leaderboard: '728×90 horizontal banner between content sections (desktop only). Replaces mobile banner on large screens.',
   mobile_banner: '320×50 sticky bottom bar on mobile devices. Dismissible by users. Visible to staff users.',
   native: 'In-feed native ad between offer cards on the browse page. Responsive. Visible to staff users.',
+  medium_rectangle: '300×250 rectangle ad in the offer detail sidebar. Visible to staff users.',
+  social_bar: 'Social bar / popunder ad that loads invisibly in the background. No visible placement needed. Visible to staff users.',
 }
 
 const DEFAULT_CONFIGS: Record<string, { adKey: string; adScriptSrc: string; width: number; height: number; adType: string }> = {
@@ -40,6 +42,8 @@ const DEFAULT_CONFIGS: Record<string, { adKey: string; adScriptSrc: string; widt
   leaderboard: { adKey: 'ff9303a4c3803518fcbf35c0d9fa74ea', adScriptSrc: 'https://www.highperformanceformat.com/ff9303a4c3803518fcbf35c0d9fa74ea/invoke.js', width: 728, height: 90, adType: 'atoptions' },
   mobile_banner: { adKey: '49b9469e70a7c6ba5a53aca9834c4282', adScriptSrc: 'https://www.highperformanceformat.com/49b9469e70a7c6ba5a53aca9834c4282/invoke.js', width: 320, height: 50, adType: 'atoptions' },
   native: { adKey: 'f4f5a78d91d7cfa27c8e5f86ee630713', adScriptSrc: 'https://pl30656065.effectivecpmnetwork.com/f4f5a78d91d7cfa27c8e5f86ee630713/invoke.js', width: 0, height: 0, adType: 'native' },
+  medium_rectangle: { adKey: 'e31a96479e89eecda197ab225f32b1f5', adScriptSrc: 'https://www.highperformanceformat.com/e31a96479e89eecda197ab225f32b1f5/invoke.js', width: 300, height: 250, adType: 'atoptions' },
+  social_bar: { adKey: '67761e77c8e7671a733147a7740f67ae', adScriptSrc: 'https://pl30656072.effectivecpmnetwork.com/67/76/1e/67761e77c8e7671a733147a7740f67ae.js', width: 0, height: 0, adType: 'social_bar' },
 }
 
 export function AdManagement() {
@@ -242,6 +246,7 @@ function AdSlotCard({
                 <SelectContent>
                   <SelectItem value="atoptions">atOptions (Adsterra iframe)</SelectItem>
                   <SelectItem value="native">Native (container + script)</SelectItem>
+                  <SelectItem value="social_bar">Social Bar / Popunder</SelectItem>
                   <SelectItem value="custom">Custom HTML</SelectItem>
                 </SelectContent>
               </Select>

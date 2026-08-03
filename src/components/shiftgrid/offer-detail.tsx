@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatDateTime, formatDate, parseRequirements } from '@/lib/types'
 import { useToast } from '@/hooks/use-toast'
-import { InlineBannerAd } from './ad-slot'
+import { InlineBannerAd, MediumRectangleAd } from './ad-slot'
 
 export function OfferDetail({ offerId }: { offerId: string }) {
   const { user, setView, openConversation } = useApp()
@@ -295,6 +295,9 @@ export function OfferDetail({ offerId }: { offerId: string }) {
               </CardContent>
             </Card>
           )}
+
+          {/* Medium rectangle ad in sidebar */}
+          <MediumRectangleAd />
         </div>
       </div>
     </div>

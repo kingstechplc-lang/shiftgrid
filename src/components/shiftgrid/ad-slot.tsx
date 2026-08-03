@@ -65,9 +65,13 @@ export function AdSlot({ slotName, className = '', label = 'Sponsored' }: AdSlot
     let html = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;padding:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:transparent;}</style></head><body>'
 
     if (config.adType === 'native') {
-      // Native ad: container div + script
+      // Native ad: container div + script (effectivecpmnetwork style)
       html += `<div id="container-${config.adKey}"></div>`
       html += `<script async="async" data-cfasync="false" src="${config.adScriptSrc}"></script>`
+    } else if (config.adType === 'social_bar') {
+      // Social bar / popunder: just load the script, no container needed
+      html += `<script async="async" data-cfasync="false" src="${config.adScriptSrc}"></script>`
+      html += `<div style="text-align:center;color:#999;font-size:10px;padding:4px;">Social Bar</div>`
     } else if (config.adType === 'custom' && config.customCode) {
       // Custom ad code
       html += config.customCode
@@ -195,6 +199,24 @@ export function InFeedAd() {
   return (
     <div className="my-4 col-span-full rounded-xl border-2 border-dashed border-muted-foreground/15 p-3 bg-muted/20">
       <AdSlot slotName="native" label="Sponsored Content" />
+    </div>
+  )
+}
+
+// Medium rectangle (300×250) — in offer detail sidebar + profile sidebar
+export function MediumRectangleAd({ className = '' }: { className?: string }) {
+  return (
+    <div className={`my-4 rounded-xl border-2 border-dashed border-muted-foreground/15 p-3 bg-muted/20 flex justify-center ${className}`}>
+      <AdSlot slotName="medium_rectangle" label="Sponsored" />
+    </div>
+  )
+}
+
+// Social bar — loads invisibly (popunder), no visual placement needed
+export function SocialBarAd() {
+  return (
+    <div style={{ position: 'fixed', top: -9999, left: -9999, width: 0, height: 0, overflow: 'hidden' }}>
+      <AdSlot slotName="social_bar" label="" />
     </div>
   )
 }
