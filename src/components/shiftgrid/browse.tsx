@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Search, SlidersHorizontal, X, Bookmark } from 'lucide-react'
 import { OfferCard } from './offer-card'
+import { InFeedAd } from './ad-slot'
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
 
 type Filters = {
@@ -138,7 +139,13 @@ export function BrowseOffers({ mine = false }: { mine?: boolean }) {
           ) : data && data.items.length > 0 ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {data.items.map(o => <OfferCard key={o.id} offer={o} />)}
+                {data.items.map((o, i) => (
+                  <div key={o.id}>
+                    <OfferCard offer={o} />
+                    {/* In-feed native ad after every 6th card */}
+                    {(i + 1) % 6 === 0 && i < data.items.length - 1 && <InFeedAd />}
+                  </div>
+                ))}
               </div>
               {(data.totalPages ?? 1) > 1 && (
                 <Pagination className="mt-6">

@@ -10,8 +10,9 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import {
   HeartPulse, LayoutDashboard, Briefcase, Inbox, Bookmark,
   User, MessageSquare, Bell, Building2, Users, Settings,
-  LogOut, Menu, FileText, Search, ShieldCheck, Stethoscope, Globe, Send, ImagePlus, ImageIcon,
+  LogOut, Menu, FileText, Search, ShieldCheck, Stethoscope, Globe, Send, ImagePlus, ImageIcon, X,
 } from 'lucide-react'
+import { SidebarAd, MobileStickyAd } from './ad-slot'
 import type { View } from '@/lib/store'
 import type { SafeUser } from '@/lib/types'
 
@@ -148,6 +149,10 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
     </div>
   )
 
+  // Only show ads to staff users (not admins/super admins)
+  const showAds = user.role === 'staff'
+  const [adDismissed, setAdDismissed] = useState(false)
+
   return (
     <div className="min-h-screen flex bg-muted/30">
       {/* Desktop sidebar */}
@@ -181,8 +186,31 @@ export function AppShell({ user, children }: { user: SafeUser; children: React.R
           </Button>
         </header>
 
-        <main className="flex-1 min-w-0">{children}</main>
+        <div className="flex flex-1 min-h-0">
+          <main className={`flex-1 min-w-0 ${showAds ? 'pb-16 lg:pb-0' : ''}`}>{children}</main>
+
+          {/* Right sidebar ad — desktop only, staff only */}
+          {showAds && (
+            <aside className="hidden xl:block w-48 shrink-0 p-4 border-l bg-background/50">
+              <SidebarAd />
+            </aside>
+          )}
+        </div>
       </div>
+
+      {/* Mobile sticky bottom ad — mobile only, staff only, dismissible */}
+      {showAds && !adDismissed && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t border-border flex items-center justify-center relative">
+          <button
+            onClick={() => setAdDismissed(true)}
+            className="absolute top-1 right-1 size-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 z-10"
+            aria-label="Dismiss ad"
+          >
+            <X className="size-3" />
+          </button>
+          <MobileStickyAd />
+        </div>
+      )}
     </div>
   )
 }

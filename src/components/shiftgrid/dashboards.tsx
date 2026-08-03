@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Briefcase, Inbox, Bookmark, Bell, FileWarning, ArrowRight, Sparkles, Building2, Clock, TrendingUp, Zap, Calendar, AlertCircle, RefreshCw } from 'lucide-react'
 import { OfferCard } from './offer-card'
+import { InlineBannerAd } from './ad-slot'
 import { formatCurrency, timeAgo } from '@/lib/types'
 
 type DashboardData = {
@@ -140,6 +141,9 @@ export function StaffHome() {
           </div>
         </div>
       )}
+
+      {/* Inline banner ad — between recommended offers and quick actions */}
+      <InlineBannerAd />
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
